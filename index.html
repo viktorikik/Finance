@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Мои финансы</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  :root {
+    --bg: #0f1117;
+    --card: #1a1d27;
+    --card-2: #232733;
+    --border: #2d3242;
+    --text: #e8eaf0;
+    --muted: #8b91a3;
+    --accent: #7c5cff;
+    --accent-hover: #9179ff;
+    --green: #3ddc97;
+    --red: #ff5c7c;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 24px 16px 120px;
+    background-image: 
+      radial-gradient(circle at 15% 0%, rgba(124,92,255,0.15), transparent 40%),
+      radial-gradient(circle at 85% 100%, rgba(61,220,151,0.08), transparent 40%);
+    background-attachment: fixed;
+  }
+
+  .container {
+    max-width: 640px;
+    margin: 0 auto;
+  }
+
+  header {
+    margin-bottom: 28px;
+    text-align: center;
+  }
+
+  h1 {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, #fff 0%, #a89cff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .subtitle {
+    color: var(--muted);
+    font-size: 14px;
+    margin-top: 6px;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+  }
+
+  .card-title {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+
+  /* Категории */
+  .cat-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .cat-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--card-2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 8px 6px 14px;
+    font-size: 14px;
+    transition: all 0.2s;
+  }
+
+  .cat-tag:hover {
+    border-color: var(--accent);
+  }
+
+  .cat-tag button {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    padding: 0 4px;
+    border-radius: 50%;
+    transition: all 0.15s;
+  }
+
+  .cat-tag button:hover {
+    color: var(--red);
+    background: rgba(255,92,124,0.1);
+  }
+
+  .empty-hint {
+    color: var(--muted);
+    font-size: 14px;
+    font-style: italic;
+  }
+
+  /* Формы */
+  .row {
+    display: flex;
+    gap: 8px;
+  }
+
+  input, select {
+    background: var(--card-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 15px;
+    padding: 12px 14px;
+    outline: none;
+    font-family: inherit;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    width: 100%;
+  }
+
+  input:focus, select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(124,92,255,0.15);
+  }
+
+  input::placeholder { color: #5b6175; }
+
+  button.btn {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 18px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  button.btn:hover {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+  }
+
+  button.btn:active { transform: translateY(0); }
+
+  button.btn-ghost {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+
+  button.btn-ghost:hover {
+    background: var(--card-2);
+    color: var(--text);
+  }
+
+  /* Расходы */
+  .expense-form {
+    display: grid;
+    grid-template-columns: 1fr 140px auto;
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+
+  @media (max-width: 520px) {
+    .expense-form {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .expense-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    background: var(--card-2);
+    border-radius: 10px;
+    margin-bottom: 8px;
+    animation: slideIn 0.25s ease;
+    border-left: 3px solid var(--accent);
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-10px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .expense-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .expense-cat {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--muted);
+    font-weight: 600;
+  }
+
+  .expense-name {
+    font-size: 15px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .expense-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  .expense-amount {
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .expense-item .del {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 18px;
+    padding: 2px 6px;
+    border-radius: 6px;
+    transition: all 0.15s;
+    line-height: 1;
+  }
+
+  .expense-item .del:hover {
+    color: var(--red);
+    background: rgba(255,92,124,0.1);
+  }
+
+  /* Итог */
+  .total-bar {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 20px;
+    width: calc(100% - 32px);
+    max-width: 640px;
+    background: linear-gradient(135deg, #232733, #1a1d27);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 18px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(124,92,255,0.1);
+    backdrop-filter: blur(10px);
+    z-index: 100;
+  }
+
+  .total-label {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    font-weight: 600;
+  }
+
+  .total-value {
+    font-size: 26px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    background: linear-gradient(135deg, #3ddc97, #7c5cff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .total-value.negative {
+    background: linear-gradient(135deg, #ff5c7c, #ff9c5c);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1>💰 Мои финансы</h1>
+    <p class="subtitle">Планируй расходы осознанно</p>
+  </header>
+
+  <!-- Категории -->
+  <section class="card">
+    <div class="card-title">Категории</div>
+    <div class="cat-list" id="catList"></div>
+    <div class="row">
+      <input type="text" id="newCat" placeholder="Новая категория...">
+      <button class="btn" id="addCatBtn">Добавить</button>
+    </div>
+  </section>
+
+  <!-- Добавление расхода -->
+  <section class="card">
+    <div class="card-title">Новый расход</div>
+    <div class="expense-form">
+      <input type="text" id="expName" placeholder="Что купил?">
+      <input type="number" id="expAmount" placeholder="Сумма ₽" min="0" step="0.01">
+      <button class="btn" id="addExpBtn">+</button>
+    </div>
+    <select id="expCat" style="display:none"></select>
+    <div class="cat-list" id="catPicker" style="margin-bottom:0"></div>
+  </section>
+
+  <!-- Список расходов -->
+  <section class="card">
+    <div class="card-title">Расходы</div>
+    <div id="expenseList"></div>
+  </section>
+
+</div>
+
+<!-- Итоговая панель -->
+<div class="total-bar">
+  <span class="total-label">Итого</span>
+  <span class="total-value" id="totalValue">0 ₽</span>
+</div>
+
+<script>
+const STORAGE_KEY = 'finance_app_v1';
+
+let state = {
+  categories: [],
+  expenses: [],
+  selectedCat: null,
+};
+
+// ===== Загрузка / сохранение =====
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function load() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) state = { ...state, ...JSON.parse(raw) };
+  } catch (e) { console.warn('load error', e); }
+
+  // Дефолтные категории при первом запуске
+  if (!state.categories.length) {
+    state.categories = ['Еда', 'Транспорт', 'Развлечения', 'Жильё'];
+  }
+  if (!state.selectedCat || !state.categories.includes(state.selectedCat)) {
+    state.selectedCat = state.categories[0] || null;
+  }
+}
+
+// ===== Форматирование =====
+const fmt = n => new Intl.NumberFormat('ru-RU', {
+  style: 'currency', currency: 'RUB', maximumFractionDigits: 0
+}).format(n);
+
+// ===== Рендер категорий =====
+function renderCategories() {
+  const list = document.getElementById('catList');
+  const picker = document.getElementById('catPicker');
+  
+  if (!state.categories.length) {
+    list.innerHTML = '<span class="empty-hint">Пока нет категорий — добавь первую 👇</span>';
+  } else {
+    list.innerHTML = state.categories.map(cat => `
+      <span class="cat-tag">
+        ${escapeHtml(cat)}
+        <button data-cat="${escapeHtml(cat)}" title="Удалить">×</button>
+      </span>
+    `).join('');
+  }
+
+  // Пикер для выбора категории расхода
+  picker.innerHTML = state.categories.map(cat => `
+    <span class="cat-tag" style="${cat === state.selectedCat ? 'border-color:var(--accent);background:rgba(124,92,255,0.15)' : ''}" data-pick="${escapeHtml(cat)}">
+      ${escapeHtml(cat)}
+    </span>
+  `).join('') || '<span class="empty-hint">Сначала добавь категории</span>';
+
+  list.querySelectorAll('button[data-cat]').forEach(btn => {
+    btn.onclick = () => removeCategory(btn.dataset.cat);
+  });
+
+  picker.querySelectorAll('[data-pick]').forEach(el => {
+    el.onclick = () => {
+      state.selectedCat = el.dataset.pick;
+      save();
+      renderCategories();
+    };
+    el.style.cursor = 'pointer';
+  });
+}
+
+// ===== Рендер расходов =====
+function renderExpenses() {
+  const list = document.getElementById('expenseList');
+  
+  if (!state.expenses.length) {
+    list.innerHTML = '<span class="empty-hint">Расходов пока нет</span>';
+  } else {
+    list.innerHTML = state.expenses.map((e, i) => `
+      <div class="expense-item">
+        <div class="expense-info">
+          <span class="expense-cat">${escapeHtml(e.category || '—')}</span>
+          <span class="expense-name">${escapeHtml(e.name)}</span>
+        </div>
+        <div class="expense-right">
+          <span class="expense-amount">${fmt(e.amount)}</span>
+          <button class="del" data-idx="${i}" title="Удалить">×</button>
+        </div>
+      </div>
+    `).join('');
+
+    list.querySelectorAll('.del').forEach(btn => {
+      btn.onclick = () => {
+        state.expenses.splice(+btn.dataset.idx, 1);
+        save();
+        renderExpenses();
+        renderTotal();
+      };
+    });
+  }
+}
+
+// ===== Итог =====
+function renderTotal() {
+  const total = state.expenses.reduce((s, e) => s + Number(e.amount || 0), 0);
+  const el = document.getElementById('totalValue');
+  el.textContent = fmt(total);
+  el.classList.toggle('negative', total < 0);
+}
+
+// ===== Действия =====
+function addCategory() {
+  const input = document.getElementById('newCat');
+  const name = input.value.trim();
+  if (!name) return;
+  if (state.categories.includes(name)) {
+    input.value = '';
+    return;
+  }
+  state.categories.push(name);
+  if (!state.selectedCat) state.selectedCat = name;
+  input.value = '';
+  save();
+  renderCategories();
+}
+
+function removeCategory(cat) {
+  state.categories = state.categories.filter(c => c !== cat);
+  if (state.selectedCat === cat) {
+    state.selectedCat = state.categories[0] || null;
+  }
+  save();
+  renderCategories();
+}
+
+function addExpense() {
+  const nameEl = document.getElementById('expName');
+  const amtEl = document.getElementById('expAmount');
+  const name = nameEl.value.trim();
+  const amount = parseFloat(amtEl.value);
+
+  if (!name) { nameEl.focus(); return; }
+  if (isNaN(amount) || amount <= 0) { amtEl.focus(); return; }
+
+  state.expenses.push({
+    name,
+    amount,
+    category: state.selectedCat || '—',
+    ts: Date.now(),
+  });
+
+  nameEl.value = '';
+  amtEl.value = '';
+  nameEl.focus();
+
+  save();
+  renderExpenses();
+  renderTotal();
+}
+
+// ===== Утилиты =====
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+
+// ===== Инициализация =====
+load();
+renderCategories();
+renderExpenses();
+renderTotal();
+
+document.getElementById('addCatBtn').onclick = addCategory;
+document.getElementById('newCat').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addCategory();
+});
+document.getElementById('addExpBtn').onclick = addExpense;
+document.getElementById('expAmount').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addExpense();
+});
+document.getElementById('expName').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('expAmount').focus();
+});
+</script>
+</body>
+</html>
