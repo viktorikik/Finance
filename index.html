@@ -178,20 +178,76 @@
     border-radius: 4px; margin-left: 6px;
   }
 
-  .goal-card {
-    background: var(--card-2); border-radius: 12px; padding: 16px;
-    margin-bottom: 12px; animation: slideIn 0.25s ease;
-    border-left: 3px solid var(--accent);
+  /* =============== SWIPE =============== */
+  .goal-hint {
+    color: var(--muted);
+    font-size: 12px;
+    text-align: center;
+    padding: 0 4px 12px;
+    font-style: italic;
+    opacity: 0.8;
   }
-  .goal-card.with-rate {
-    border-left-color: var(--green);
+
+  .goal-swipe {
+    position: relative;
+    overflow: hidden;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    background: linear-gradient(90deg, transparent 40%, #d62e50 100%);
+    animation: slideIn 0.25s ease;
+  }
+
+  .goal-delete-action {
+    position: absolute;
+    top: 0; bottom: 0; right: 0;
+    width: 100px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    color: #fff;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    user-select: none;
+    z-index: 0;
+  }
+  .goal-delete-action .trash {
+    font-size: 20px;
+    line-height: 1;
+  }
+
+  .goal-card {
+    position: relative;
+    z-index: 1;
+    touch-action: pan-y;
+    transform: translateX(0);
+    background: var(--card-2);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 0;
+    border-left: 3px solid var(--accent);
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: pointer;
+    transition: transform 0.25s ease;
+  }
+  .goal-card.with-rate { border-left-color: var(--green); }
+  .goal-card input, .goal-card textarea {
+    user-select: text;
+    -webkit-user-select: text;
+    cursor: text;
+  }
+  .goal-card button, .goal-card summary, .goal-card details {
+    cursor: pointer;
   }
 
   .goal-head {
     display: flex; justify-content: space-between; align-items: flex-start;
     margin-bottom: 10px; gap: 8px;
   }
-  .goal-name { font-size: 16px; font-weight: 600; }
+  .goal-name { font-size: 16px; font-weight: 600; line-height: 1.4; }
   .goal-meta { font-size: 12px; color: var(--muted); margin-top: 3px; }
 
   .goal-rate-badge {
@@ -202,6 +258,18 @@
     padding: 2px 8px; border-radius: 5px;
     letter-spacing: 0.4px;
     margin-left: 6px;
+    white-space: nowrap;
+  }
+
+  .goal-index-badge {
+    display: inline-block;
+    background: rgba(255,200,87,0.15);
+    color: var(--yellow);
+    font-size: 11px; font-weight: 700;
+    padding: 2px 8px; border-radius: 5px;
+    letter-spacing: 0.4px;
+    margin-left: 6px;
+    white-space: nowrap;
   }
 
   .goal-rate-info {
@@ -212,6 +280,48 @@
     font-size: 12px; color: var(--green); line-height: 1.5;
   }
   .goal-rate-info .label { color: var(--muted); }
+
+  .goal-index-info {
+    margin-top: 8px; padding: 8px 12px;
+    background: rgba(255,200,87,0.08);
+    border: 1px solid rgba(255,200,87,0.2);
+    border-radius: 8px;
+    font-size: 12px; color: var(--yellow); line-height: 1.5;
+  }
+  .goal-index-info .label { color: var(--muted); }
+
+  .index-breakdown {
+    margin-top: 8px;
+    border-top: 1px dashed var(--border);
+    padding-top: 8px;
+  }
+  .index-breakdown summary {
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 12px;
+    list-style: none;
+    display: flex; align-items: center; gap: 5px;
+    user-select: none;
+    padding: 2px 0;
+  }
+  .index-breakdown summary::-webkit-details-marker { display: none; }
+  .index-breakdown summary::before {
+    content: '▸'; display: inline-block; transition: transform 0.15s;
+    font-size: 10px;
+  }
+  .index-breakdown[open] summary::before { transform: rotate(90deg); }
+  .index-breakdown summary:hover { color: var(--text); }
+  .year-rows {
+    margin-top: 6px;
+    display: flex; flex-direction: column; gap: 3px;
+  }
+  .year-row {
+    display: flex; justify-content: space-between;
+    padding: 5px 10px; background: rgba(0,0,0,0.18); border-radius: 6px;
+    color: var(--muted); font-size: 12px;
+    font-variant-numeric: tabular-nums;
+  }
+  .year-row .val { color: var(--text); font-weight: 600; }
 
   .progress-bar {
     height: 8px; background: rgba(255,255,255,0.06); border-radius: 4px;
@@ -232,6 +342,7 @@
   .goal-saved { color: var(--muted); font-variant-numeric: tabular-nums; }
   .goal-monthly {
     font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums;
+    text-align: right;
   }
   .goal-monthly.overdue { color: var(--red); }
   .goal-monthly.done { color: var(--green); }
@@ -440,43 +551,6 @@
   .stat-tile .value.income { color: var(--green); }
   .stat-tile .value.expense { color: #ff8fa3; }
 
-  /* Форма цели */
-  .goal-form {
-    display: none; gap: 8px; flex-direction: column;
-    background: var(--card-2); border-radius: 12px; padding: 14px;
-    margin-bottom: 12px; border: 1px dashed var(--border);
-  }
-  .goal-form.open { display: flex; }
-  .goal-form .form-row { display: flex; gap: 8px; }
-  .goal-form label {
-    font-size: 12px; color: var(--muted); text-transform: uppercase;
-    letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px; display: block;
-  }
-  .goal-form .form-group { flex: 1; min-width: 0; }
-  .goal-form .form-actions { display: flex; gap: 8px; justify-content: flex-end; }
-  .goal-form .form-actions .cancel {
-    background: transparent; border: 1px solid var(--border); color: var(--muted);
-  }
-
-  .rate-toggle-row {
-    display: flex; align-items: center; gap: 10px;
-    padding: 8px 0; cursor: pointer; user-select: none;
-  }
-  .rate-toggle-row input[type="checkbox"] {
-    width: 18px; height: 18px;
-    accent-color: var(--accent);
-    cursor: pointer;
-    flex-shrink: 0;
-    padding: 0;
-  }
-  .rate-toggle-row .rate-toggle-label {
-    font-size: 14px; color: var(--text);
-  }
-  .rate-toggle-row .rate-toggle-hint {
-    font-size: 11px; color: var(--muted); display: block;
-    margin-top: 2px;
-  }
-
   .quick-dates {
     display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px;
   }
@@ -488,6 +562,32 @@
   }
   .quick-dates button:hover {
     border-color: var(--accent); color: var(--text); background: rgba(124,92,255,0.08);
+  }
+
+  .rate-toggle-row {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 4px 0; cursor: pointer; user-select: none;
+  }
+  .rate-toggle-row input[type="checkbox"] {
+    width: 18px; height: 18px;
+    accent-color: var(--accent);
+    cursor: pointer;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .rate-toggle-row label {
+    cursor: pointer;
+    display: block;
+    margin: 0;
+  }
+  .rate-toggle-row .rate-toggle-label {
+    font-size: 14px; color: var(--text); display: block;
+    text-transform: none; letter-spacing: 0; font-weight: 400;
+    margin: 0;
+  }
+  .rate-toggle-row .rate-toggle-hint {
+    font-size: 11px; color: var(--muted); display: block;
+    margin-top: 2px; text-transform: none; letter-spacing: 0; font-weight: 400;
   }
 
   .empty-hint { color: var(--muted); font-size: 14px; font-style: italic; }
@@ -515,6 +615,109 @@
     display: flex; gap: 8px; margin-top: 8px;
   }
   .custom-period input { flex: 1; }
+
+  /* =============== МОДАЛКА =============== */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.65);
+    z-index: 300;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    animation: fadeIn 0.18s ease;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .modal {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    width: 100%;
+    max-width: 520px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+    animation: modalIn 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+    overflow: hidden;
+  }
+  @keyframes modalIn {
+    from { opacity: 0; transform: translateY(24px) scale(0.96); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .modal-title {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: -0.2px;
+  }
+  .modal-close {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    font-size: 26px;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0 6px;
+    border-radius: 8px;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+  .modal-close:hover { color: var(--text); background: var(--card-2); }
+
+  .modal-body {
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    overflow-y: auto;
+  }
+  .modal-body .form-group { display: flex; flex-direction: column; }
+  .modal-body .form-row { display: flex; gap: 8px; }
+  .modal-body .form-row > .form-group { flex: 1; min-width: 0; }
+  .modal-body > .form-group > label,
+  .modal-body .form-row > .form-group > label {
+    font-size: 12px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    display: block;
+  }
+
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 14px 20px 18px;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .modal-actions .cancel {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+  .modal-actions .cancel:hover {
+    border-color: var(--muted);
+    color: var(--text);
+    background: var(--card-2);
+  }
 
   .total-bar {
     position: fixed; left: 50%; transform: translateX(-50%); bottom: 16px;
@@ -554,14 +757,37 @@
 
   .toast {
     position: fixed; top: 20px; left: 50%;
-    transform: translateX(-50%) translateY(-100px);
-    background: var(--green); color: #0a0a0a; padding: 10px 20px;
-    border-radius: 10px; font-weight: 600; font-size: 14px;
-    transition: transform 0.3s ease; z-index: 200;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    transform: translateX(-50%) translateY(-120px);
+    background: var(--green); color: #0a0a0a;
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-weight: 600; font-size: 14px;
+    transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    z-index: 400;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    max-width: calc(100% - 32px);
   }
   .toast.show { transform: translateX(-50%) translateY(0); }
   .toast.error { background: var(--red); color: #fff; }
+  .toast button {
+    background: rgba(0,0,0,0.18);
+    border: none;
+    color: inherit;
+    padding: 6px 12px;
+    border-radius: 7px;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    font-family: inherit;
+    white-space: nowrap;
+    transition: background 0.15s;
+  }
+  .toast button:hover {
+    background: rgba(0,0,0,0.3);
+  }
 
   @media (max-width: 480px) {
     .row { flex-wrap: wrap; }
@@ -623,52 +849,7 @@
         <button class="toggle" id="toggleGoalForm">+ Добавить цель</button>
       </div>
 
-      <div class="goal-form" id="goalForm">
-        <div class="form-group">
-          <label>Название</label>
-          <input type="text" id="goalName" placeholder="Отпуск, ремонт, подушка, капитал...">
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Целевая сумма</label>
-            <input type="number" id="goalTarget" placeholder="₽" min="0" step="1000">
-          </div>
-          <div class="form-group">
-            <label>Уже отложено</label>
-            <input type="number" id="goalSaved" placeholder="0" min="0" step="1000" value="0">
-          </div>
-        </div>
-        <div class="form-group">
-          <label>Срок достижения</label>
-          <input type="month" id="goalDeadline">
-          <div class="quick-dates">
-            <button type="button" data-add-months="12">+1 год</button>
-            <button type="button" data-add-months="24">+2 года</button>
-            <button type="button" data-add-months="36">+3 года</button>
-            <button type="button" data-add-months="60">+5 лет</button>
-            <button type="button" data-add-months="120">+10 лет</button>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label class="rate-toggle-row" for="goalUseRate">
-            <input type="checkbox" id="goalUseRate">
-            <span>
-              <span class="rate-toggle-label">Учитывать сложный процент</span>
-              <span class="rate-toggle-hint">Для целей-капиталов (вклады, инвестиции)</span>
-            </span>
-          </label>
-          <div id="goalRateGroup" style="display:none;margin-top:8px">
-            <input type="number" id="goalRate" placeholder="8" min="0" max="100" step="0.1" value="8">
-            <div style="font-size:11px;color:var(--muted);margin-top:4px">% годовых</div>
-          </div>
-        </div>
-
-        <div class="form-actions">
-          <button class="btn cancel" id="cancelGoalBtn">Отмена</button>
-          <button class="btn" id="saveGoalBtn">Сохранить</button>
-        </div>
-      </div>
+      <div class="goal-hint" id="goalHint">💡 Свайп влево — удалить · Тап по карточке — редактировать</div>
 
       <div id="goalList"></div>
     </section>
@@ -743,7 +924,77 @@
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
+<!-- Модалка цели -->
+<div class="modal-overlay" id="goalModal" style="display:none">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="goalModalTitle">Новая цель</div>
+      <button class="modal-close" id="goalModalClose" aria-label="Закрыть">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label for="mGoalName">Название</label>
+        <input type="text" id="mGoalName" placeholder="Отпуск, ремонт, подушка, капитал...">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="mGoalTarget">Целевая сумма</label>
+          <input type="number" id="mGoalTarget" placeholder="₽" min="0" step="1000">
+        </div>
+        <div class="form-group" id="mGoalSavedGroup">
+          <label for="mGoalSaved">Уже отложено</label>
+          <input type="number" id="mGoalSaved" placeholder="0" min="0" step="1000" value="0">
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="mGoalDeadline">Срок достижения</label>
+        <input type="month" id="mGoalDeadline">
+        <div class="quick-dates" id="mGoalQuickDates">
+          <button type="button" data-add-months="12">+1 год</button>
+          <button type="button" data-add-months="24">+2 года</button>
+          <button type="button" data-add-months="36">+3 года</button>
+          <button type="button" data-add-months="60">+5 лет</button>
+          <button type="button" data-add-months="120">+10 лет</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="rate-toggle-row">
+          <input type="checkbox" id="mGoalUseRate">
+          <label for="mGoalUseRate">
+            <span class="rate-toggle-label">Учитывать сложный процент</span>
+            <span class="rate-toggle-hint">Для целей-капиталов (вклады, инвестиции)</span>
+          </label>
+        </div>
+        <div id="mGoalRateGroup" style="display:none;margin-top:8px">
+          <input type="number" id="mGoalRate" placeholder="8" min="0" max="100" step="0.1" value="8">
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">% годовых</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="rate-toggle-row">
+          <input type="checkbox" id="mGoalUseIndex">
+          <label for="mGoalUseIndex">
+            <span class="rate-toggle-label">Индексировать взнос</span>
+            <span class="rate-toggle-hint">Взнос растёт с каждым годом (например, с ростом ЗП)</span>
+          </label>
+        </div>
+        <div id="mGoalIndexGroup" style="display:none;margin-top:8px">
+          <input type="number" id="mGoalIndex" placeholder="5" min="0" max="100" step="0.1" value="5">
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">% индексации в год</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn cancel" id="goalModalCancel">Отмена</button>
+      <button class="btn" id="goalModalSave">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">
+  <span id="toastMsg"></span>
+  <button id="toastAction" style="display:none"></button>
+</div>
 
 <script>
 const STORAGE_KEY = 'year_planner_v1';
@@ -760,6 +1011,9 @@ let state = {
   expenses: [],
   goals: [],
 };
+
+let goalModalMode = 'add';
+let goalModalEditId = null;
 
 const uid = () => Math.random().toString(36).slice(2, 9);
 
@@ -802,7 +1056,12 @@ function load() {
       if (savedNum > 0) contributions.push({ id: uid(), date: todayStr(), amount: savedNum });
     }
     const { saved, ...rest } = g;
-    return { ...rest, contributions, rate: Number(g.rate) || 0 };
+    return {
+      ...rest,
+      contributions,
+      rate: Number(g.rate) || 0,
+      indexRate: Number(g.indexRate) || 0,
+    };
   });
 }
 
@@ -871,18 +1130,46 @@ function goalSaved(g) {
   return (g.contributions || []).reduce((s, c) => s + Number(c.amount || 0), 0);
 }
 
-// Расчёт месячного взноса с учётом сложного процента
+/**
+ * Расчёт месячного взноса с учётом:
+ * - сложного процента (rate)
+ * - индексации взноса (indexRate) — взнос растёт ежегодно
+ *
+ * Формула: PMT = (target - saved·(1+r)^n) / FV_unit
+ * где FV_unit — будущая стоимость единичных взносов, растущих с индексацией.
+ */
 function goalMonthly(g, saved, months, target) {
   const remaining = Math.max(0, target - saved);
   if (remaining <= 0 || months <= 0) return 0;
+
   const rateAnnual = Number(g.rate) || 0;
-  if (rateAnnual <= 0) return remaining / months;
+  const indexAnnual = Number(g.indexRate) || 0;
+
+  if (rateAnnual <= 0 && indexAnnual <= 0) {
+    return remaining / months;
+  }
+
   const r = rateAnnual / 100 / 12;
-  if (r <= 0) return remaining / months;
-  const growth = Math.pow(1 + r, months);
-  const need = target - saved * growth;
-  if (need <= 0) return 0; // рост сам доведёт до цели
-  return need * r / (growth - 1);
+  const i = indexAnnual / 100;
+
+  // Будущая стоимость уже отложенного (растёт по ставке)
+  const fvSaved = saved * Math.pow(1 + r, months);
+  const need = target - fvSaved;
+  if (need <= 0) return 0;
+
+  // Будущая стоимость единичных взносов с индексацией
+  // Взнос на месяц m равен (1+i)^floor(m/12)
+  // Растёт с процентами за (months-1-m) месяцев
+  let fvUnit = 0;
+  for (let m = 0; m < months; m++) {
+    const yearIdx = Math.floor(m / 12);
+    const factor = Math.pow(1 + i, yearIdx);
+    const monthsToGrow = months - 1 - m;
+    fvUnit += factor * Math.pow(1 + r, monthsToGrow);
+  }
+
+  if (fvUnit <= 0) return need / months;
+  return need / fvUnit;
 }
 
 function calcGoal(g) {
@@ -895,24 +1182,45 @@ function calcGoal(g) {
   const done = remaining === 0;
   const percent = g.target > 0 ? Math.min(100, (saved / g.target) * 100) : 0;
   const rateAnnual = Number(g.rate) || 0;
+  const indexAnnual = Number(g.indexRate) || 0;
 
-  // Процентный доход к сроку
+  // Разбивка взноса по годам (только если включена индексация)
+  const yearsCount = Math.max(1, Math.ceil(months / 12));
+  const yearBreakdown = [];
+  if (indexAnnual > 0 && perMonth > 0) {
+    for (let y = 0; y < yearsCount; y++) {
+      const monthsInYear = Math.min(12, months - y * 12);
+      yearBreakdown.push({
+        year: y + 1,
+        months: monthsInYear,
+        monthly: perMonth * Math.pow(1 + indexAnnual / 100, y),
+      });
+    }
+  }
+
   let interestEarned = 0;
   let growthCovers = false;
   if (rateAnnual > 0 && !done && remaining > 0) {
     if (perMonth === 0) {
-      // saved с процентами сам дотянет до target
       growthCovers = true;
       const r = rateAnnual / 100 / 12;
       const fv = saved * Math.pow(1 + r, months);
       interestEarned = Math.max(0, fv - saved);
     } else {
-      const totalContrib = saved + perMonth * months;
-      interestEarned = Math.max(0, g.target - totalContrib);
+      // Сумма всех номинальных взносов (с учётом индексации)
+      let nominalContrib = 0;
+      for (let m = 0; m < months; m++) {
+        nominalContrib += perMonth * Math.pow(1 + indexAnnual / 100, Math.floor(m / 12));
+      }
+      interestEarned = Math.max(0, g.target - saved - nominalContrib);
     }
   }
 
-  return { saved, remaining, diff, months, perMonth, overdue, done, percent, rateAnnual, interestEarned, growthCovers };
+  return {
+    saved, remaining, diff, months, perMonth, overdue, done, percent,
+    rateAnnual, indexAnnual, interestEarned, growthCovers,
+    yearBreakdown, yearsCount,
+  };
 }
 
 function totalMonthlyIncome() {
@@ -1088,10 +1396,14 @@ function renderContribChart(g) {
 
 function renderGoals() {
   const el = document.getElementById('goalList');
+  const hint = document.getElementById('goalHint');
+
   if (!state.goals.length) {
     el.innerHTML = '<span class="empty-hint">Целей пока нет. Нажми «+ Добавить цель»</span>';
+    if (hint) hint.style.display = 'none';
     return;
   }
+  if (hint) hint.style.display = '';
 
   const sorted = [...state.goals].sort((a, b) =>
     (a.deadline || '').localeCompare(b.deadline || '')
@@ -1100,11 +1412,13 @@ function renderGoals() {
   el.innerHTML = sorted.map(g => {
     const c = calcGoal(g);
     const hasRate = c.rateAnnual > 0;
+    const hasIndex = c.indexAnnual > 0;
     let fillClass = '';
     if (c.done) fillClass = 'done';
     else if (c.overdue) fillClass = 'overdue';
     else if (c.growthCovers) fillClass = 'growth';
 
+    // Основной месячный взнос
     let monthlyHtml;
     if (c.done) {
       monthlyHtml = `<span class="goal-monthly done">✓ Готово</span>`;
@@ -1112,6 +1426,9 @@ function renderGoals() {
       monthlyHtml = `<span class="goal-monthly overdue">⚠️ Просрочено на ${fmt(c.remaining)}</span>`;
     } else if (c.growthCovers) {
       monthlyHtml = `<span class="goal-monthly done">✓ Рост покрывает</span>`;
+    } else if (hasIndex) {
+      const lastYear = c.yearBreakdown[c.yearBreakdown.length - 1]?.monthly || c.perMonth;
+      monthlyHtml = `<span class="goal-monthly">${fmt(c.perMonth)} → ${fmt(lastYear)} ₽/мес</span>`;
     } else {
       monthlyHtml = `<span class="goal-monthly">${fmt(c.perMonth)}/мес</span>`;
     }
@@ -1119,12 +1436,36 @@ function renderGoals() {
     const rateBadge = hasRate
       ? `<span class="goal-rate-badge">💹 ${c.rateAnnual}%</span>`
       : '';
+    const indexBadge = hasIndex
+      ? `<span class="goal-index-badge">📈 ${c.indexAnnual}%</span>`
+      : '';
 
     const rateInfo = (hasRate && !c.done && c.interestEarned > 0)
       ? `<div class="goal-rate-info">
           <span class="label">Доход от процентов к сроку ≈</span>
           <strong>${fmt(c.interestEarned)}</strong>
         </div>`
+      : '';
+
+    const indexInfo = (hasIndex && !c.done && c.perMonth > 0)
+      ? `<div class="goal-index-info">
+          <span class="label">Взнос растёт на ${c.indexAnnual}%/год:</span>
+          <strong>${fmt(c.perMonth)} → ${fmt(c.yearBreakdown[c.yearBreakdown.length-1].monthly)} ₽/мес</strong>
+        </div>`
+      : '';
+
+    const indexBreakdown = (hasIndex && c.yearBreakdown.length > 0)
+      ? `<details class="index-breakdown">
+          <summary>Взнос по годам (${c.yearsCount})</summary>
+          <div class="year-rows">
+            ${c.yearBreakdown.map(y => `
+              <div class="year-row">
+                <span>Год ${y.year} · ${y.months} мес</span>
+                <span class="val">${fmt(y.monthly)}/мес</span>
+              </div>
+            `).join('')}
+          </div>
+        </details>`
       : '';
 
     const contribs = (g.contributions || []).slice().sort((a, b) =>
@@ -1146,46 +1487,66 @@ function renderGoals() {
     const chart = renderContribChart(g);
 
     return `
-      <div class="goal-card ${hasRate ? 'with-rate' : ''}">
-        <div class="goal-head">
-          <div style="min-width:0">
-            <div class="goal-name">${escapeHtml(g.name)}${rateBadge}</div>
-            <div class="goal-meta">К ${formatDeadline(g.deadline)} · ${humanDuration(c.diff)}</div>
+      <div class="goal-swipe" data-goal-id="${g.id}">
+        <div class="goal-delete-action" data-delete-goal="${g.id}">
+          <span class="trash">🗑</span>
+          <span>Удалить</span>
+        </div>
+        <div class="goal-card ${hasRate ? 'with-rate' : ''}" data-goal-card="${g.id}">
+          <div class="goal-head">
+            <div style="min-width:0">
+              <div class="goal-name">${escapeHtml(g.name)}${rateBadge}${indexBadge}</div>
+              <div class="goal-meta">К ${formatDeadline(g.deadline)} · ${humanDuration(c.diff)}</div>
+            </div>
           </div>
-          <button class="del" data-id="${g.id}" title="Удалить цель">×</button>
+
+          <div class="progress-bar">
+            <div class="progress-fill ${fillClass}" style="width:${c.percent}%"></div>
+          </div>
+
+          <div class="goal-stats">
+            <span class="goal-saved">${fmt(c.saved)} из ${fmt(g.target)} · ${Math.round(c.percent)}%</span>
+            ${monthlyHtml}
+          </div>
+
+          ${rateInfo}
+          ${indexInfo}
+          ${indexBreakdown}
+
+          <div class="contrib-form" data-goal-id="${g.id}">
+            <input type="number" placeholder="Взнос ₽" min="0" step="100" data-contrib-input>
+            <input type="date" value="${todayStr()}" data-contrib-date>
+            <button type="button" data-add-contrib>+</button>
+          </div>
+
+          <details class="contrib-history">
+            <summary>История взносов (${contribs.length})</summary>
+            ${chart}
+            <div class="contrib-list">${contribList}</div>
+          </details>
         </div>
-
-        <div class="progress-bar">
-          <div class="progress-fill ${fillClass}" style="width:${c.percent}%"></div>
-        </div>
-
-        <div class="goal-stats">
-          <span class="goal-saved">${fmt(c.saved)} из ${fmt(g.target)} · ${Math.round(c.percent)}%</span>
-          ${monthlyHtml}
-        </div>
-
-        ${rateInfo}
-
-        <div class="contrib-form" data-goal-id="${g.id}">
-          <input type="number" placeholder="Взнос ₽" min="0" step="100" data-contrib-input>
-          <input type="date" value="${todayStr()}" data-contrib-date>
-          <button type="button" data-add-contrib>+</button>
-        </div>
-
-        <details class="contrib-history">
-          <summary>История взносов (${contribs.length})</summary>
-          ${chart}
-          <div class="contrib-list">${contribList}</div>
-        </details>
       </div>
     `;
   }).join('');
 
-  el.querySelectorAll('.goal-head .del').forEach(btn => {
-    btn.onclick = () => {
-      state.goals = state.goals.filter(x => x.id !== btn.dataset.id);
-      save(); renderGoals(); renderExpenses(); renderTotal(); renderCalendar(); renderStats();
-    };
+  el.querySelectorAll('[data-goal-card]').forEach(card => {
+    const gid = card.dataset.goalCard;
+    card.addEventListener('click', e => {
+      if (card.dataset.justSwiped) return;
+      if (e.target.closest('input, button, textarea, select, summary, details')) return;
+      if (card.dataset.swiped === 'true') {
+        resetSwipe(card);
+        return;
+      }
+      openGoalModal('edit', gid);
+    });
+    attachSwipe(card);
+  });
+
+  el.querySelectorAll('[data-delete-goal]').forEach(action => {
+    action.addEventListener('click', () => {
+      deleteGoal(action.dataset.deleteGoal);
+    });
   });
 
   el.querySelectorAll('[data-contrib-id]').forEach(btn => {
@@ -1222,6 +1583,229 @@ function renderGoals() {
       }
     });
   });
+}
+
+/* ============================================================
+   SWIPE-TO-DELETE
+   ============================================================ */
+
+let swipeState = null;
+
+function attachSwipe(card) {
+  card.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    if (e.target.closest('input, button, textarea, select, summary, details, .contrib-form')) return;
+
+    swipeState = {
+      card,
+      pointerId: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      curX: 0,
+      dragging: false,
+      moved: false,
+    };
+    card.style.transition = 'none';
+  });
+
+  card.addEventListener('pointermove', e => {
+    if (!swipeState || swipeState.pointerId !== e.pointerId || swipeState.card !== card) return;
+
+    const dx = e.clientX - swipeState.startX;
+    const dy = e.clientY - swipeState.startY;
+
+    if (!swipeState.dragging) {
+      if (Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(dy)) {
+        swipeState.dragging = true;
+      } else if (Math.abs(dy) > 10) {
+        card.style.transition = 'transform 0.2s ease';
+        card.style.transform = 'translateX(0)';
+        swipeState = null;
+        return;
+      } else {
+        return;
+      }
+    }
+
+    swipeState.moved = true;
+    swipeState.curX = Math.max(-110, Math.min(0, dx));
+    card.style.transform = `translateX(${swipeState.curX}px)`;
+  });
+
+  const endSwipe = e => {
+    if (!swipeState || swipeState.pointerId !== e.pointerId || swipeState.card !== card) return;
+    const s = swipeState;
+    swipeState = null;
+
+    card.style.transition = 'transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1)';
+
+    if (s.curX <= -55) {
+      card.style.transform = 'translateX(-100px)';
+      card.dataset.swiped = 'true';
+    } else {
+      card.style.transform = 'translateX(0)';
+      card.dataset.swiped = '';
+    }
+
+    if (s.moved) {
+      card.dataset.justSwiped = 'true';
+      setTimeout(() => { delete card.dataset.justSwiped; }, 350);
+    }
+  };
+
+  card.addEventListener('pointerup', endSwipe);
+  card.addEventListener('pointercancel', endSwipe);
+  card.addEventListener('pointerleave', e => {
+    if (e.pointerType === 'mouse' && swipeState && swipeState.card === card && !swipeState.moved) {
+      swipeState = null;
+    }
+  });
+}
+
+function resetSwipe(card) {
+  card.style.transition = 'transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1)';
+  card.style.transform = 'translateX(0)';
+  card.dataset.swiped = '';
+}
+
+function closeAllSwipes() {
+  document.querySelectorAll('.goal-card[data-swiped="true"]').forEach(card => {
+    resetSwipe(card);
+  });
+}
+
+document.addEventListener('pointerdown', e => {
+  if (e.target.closest('.goal-swipe')) return;
+  closeAllSwipes();
+}, true);
+
+/* ============================================================
+   УДАЛЕНИЕ ЦЕЛИ С UNDO
+   ============================================================ */
+
+function deleteGoal(goalId) {
+  const idx = state.goals.findIndex(x => x.id === goalId);
+  if (idx === -1) return;
+  const [deleted] = state.goals.splice(idx, 1);
+  save();
+  renderGoals(); renderExpenses(); renderTotal(); renderCalendar(); renderStats();
+
+  showToast(`Цель «${deleted.name}» удалена`, false, {
+    label: 'Отменить',
+    onClick: () => {
+      const insertAt = Math.min(idx, state.goals.length);
+      state.goals.splice(insertAt, 0, deleted);
+      save();
+      renderGoals(); renderExpenses(); renderTotal(); renderCalendar(); renderStats();
+      showToast('Восстановлено');
+    },
+  });
+}
+
+/* ============================================================
+   МОДАЛКА ЦЕЛИ
+   ============================================================ */
+
+function openGoalModal(mode, goalId) {
+  goalModalMode = mode;
+  goalModalEditId = goalId || null;
+
+  const titleEl = document.getElementById('goalModalTitle');
+  const savedGroup = document.getElementById('mGoalSavedGroup');
+  const nameEl = document.getElementById('mGoalName');
+  const targetEl = document.getElementById('mGoalTarget');
+  const savedEl = document.getElementById('mGoalSaved');
+  const deadlineEl = document.getElementById('mGoalDeadline');
+  const useRateEl = document.getElementById('mGoalUseRate');
+  const rateEl = document.getElementById('mGoalRate');
+  const rateGroup = document.getElementById('mGoalRateGroup');
+  const useIndexEl = document.getElementById('mGoalUseIndex');
+  const indexEl = document.getElementById('mGoalIndex');
+  const indexGroup = document.getElementById('mGoalIndexGroup');
+
+  if (mode === 'add') {
+    titleEl.textContent = 'Новая цель';
+    nameEl.value = '';
+    targetEl.value = '';
+    savedEl.value = '0';
+    savedGroup.style.display = '';
+    const now = new Date();
+    const d = new Date(now.getFullYear() + 1, now.getMonth(), 1);
+    deadlineEl.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    useRateEl.checked = false;
+    rateGroup.style.display = 'none';
+    rateEl.value = '8';
+    useIndexEl.checked = false;
+    indexGroup.style.display = 'none';
+    indexEl.value = '5';
+  } else {
+    const g = state.goals.find(x => x.id === goalId);
+    if (!g) return;
+    titleEl.textContent = 'Редактировать цель';
+    nameEl.value = g.name;
+    targetEl.value = g.target;
+    savedEl.value = '0';
+    savedGroup.style.display = 'none';
+    deadlineEl.value = g.deadline || '';
+    const hasRate = (Number(g.rate) || 0) > 0;
+    useRateEl.checked = hasRate;
+    rateGroup.style.display = hasRate ? 'block' : 'none';
+    rateEl.value = hasRate ? String(g.rate) : '8';
+    const hasIndex = (Number(g.indexRate) || 0) > 0;
+    useIndexEl.checked = hasIndex;
+    indexGroup.style.display = hasIndex ? 'block' : 'none';
+    indexEl.value = hasIndex ? String(g.indexRate) : '5';
+  }
+
+  document.getElementById('goalModal').style.display = 'flex';
+  setTimeout(() => nameEl.focus(), 60);
+}
+
+function closeGoalModal() {
+  document.getElementById('goalModal').style.display = 'none';
+  goalModalMode = 'add';
+  goalModalEditId = null;
+}
+
+function saveGoalFromModal() {
+  const name = document.getElementById('mGoalName').value.trim();
+  const target = parseFloat(document.getElementById('mGoalTarget').value);
+  const deadline = document.getElementById('mGoalDeadline').value;
+  const useRate = document.getElementById('mGoalUseRate').checked;
+  const rate = useRate ? (parseFloat(document.getElementById('mGoalRate').value) || 0) : 0;
+  const useIndex = document.getElementById('mGoalUseIndex').checked;
+  const indexRate = useIndex ? (parseFloat(document.getElementById('mGoalIndex').value) || 0) : 0;
+
+  if (!name) { document.getElementById('mGoalName').focus(); return; }
+  if (isNaN(target) || target <= 0) { document.getElementById('mGoalTarget').focus(); return; }
+  if (!deadline) { document.getElementById('mGoalDeadline').focus(); return; }
+
+  if (goalModalMode === 'add') {
+    const saved = parseFloat(document.getElementById('mGoalSaved').value) || 0;
+    const contributions = [];
+    if (saved > 0) contributions.push({ id: uid(), date: todayStr(), amount: saved });
+    state.goals.push({ id: uid(), name, target, deadline, contributions, rate, indexRate });
+  } else {
+    const g = state.goals.find(x => x.id === goalModalEditId);
+    if (!g) return;
+    g.name = name;
+    g.target = target;
+    g.deadline = deadline;
+    g.rate = rate;
+    g.indexRate = indexRate;
+  }
+
+  save();
+  closeGoalModal();
+  renderGoals(); renderExpenses(); renderTotal(); renderCalendar(); renderStats();
+  showToast(goalModalMode === 'add' ? 'Цель добавлена' : 'Изменения сохранены');
+}
+
+function setModalDeadlineOffset(months) {
+  const now = new Date();
+  const d = new Date(now.getFullYear(), now.getMonth() + months, 1);
+  document.getElementById('mGoalDeadline').value =
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
 /* ============================================================
@@ -1277,7 +1861,7 @@ function renderCalendar() {
   const goalData = activeGoals.map(g => {
     const c = calcGoal(g);
     const [y, m] = g.deadline.split('-').map(Number);
-    return { goal: g, calc: c, endMonth: y * 12 + (m - 1) };
+    return { goal: g, calc: c, endMonth: y * 12 + (m - 1), startMonthIdx: startMonth };
   });
 
   const furthest = Math.max(...goalData.map(g => g.endMonth));
@@ -1285,11 +1869,21 @@ function renderCalendar() {
   const rows = [];
   let peak = { month: startMonth, total: 0 };
 
+  // Для каждой цели вычисляем взнос в конкретный месяц с учётом индексации
+  const contribAtMonth = (gd, monthIdx) => {
+    const c = gd.calc;
+    if (!c.perMonth) return 0;
+    if (monthIdx > gd.endMonth) return 0;
+    const yearIdx = Math.floor((monthIdx - startMonth) / 12);
+    const indexRate = Number(gd.goal.indexRate) || 0;
+    return c.perMonth * Math.pow(1 + indexRate / 100, yearIdx);
+  };
+
   for (let m = startMonth; m <= furthest; m++) {
     const active = goalData.filter(g => m <= g.endMonth);
     if (!active.length) continue;
 
-    const total = active.reduce((s, g) => s + g.calc.perMonth, 0);
+    const total = active.reduce((s, gd) => s + contribAtMonth(gd, m), 0);
     if (total > peak.total) peak = { month: m, total };
 
     const overload = income > 0 && total > free;
@@ -1297,8 +1891,8 @@ function renderCalendar() {
       label: monthLabel(m),
       total,
       overload,
-      breakdown: active.map(g =>
-        `${escapeHtml(g.goal.name)} ${fmt(g.calc.perMonth)}`
+      breakdown: active.map(gd =>
+        `${escapeHtml(gd.goal.name)} ${fmt(contribAtMonth(gd, m))}`
       ).join(' · '),
     });
   }
@@ -1453,12 +2047,15 @@ function goalsProgressCard() {
     if (c.done) color = '#3ddc97';
     else if (c.overdue) color = '#ff5c7c';
 
-    const rateBadge = c.rateAnnual > 0 ? ` <span style="color:var(--green);font-size:11px">· ${c.rateAnnual}%</span>` : '';
+    const badges = [];
+    if (c.rateAnnual > 0) badges.push(`<span style="color:var(--green);font-size:11px">💹 ${c.rateAnnual}%</span>`);
+    if (c.indexAnnual > 0) badges.push(`<span style="color:var(--yellow);font-size:11px">📈 ${c.indexAnnual}%</span>`);
+    const badgeStr = badges.length ? ' ' + badges.join(' ') : '';
 
     return `
       <div class="stat-hbar-row">
         <div class="stat-hbar-head">
-          <span class="stat-hbar-name">${escapeHtml(g.name)}${rateBadge}</span>
+          <span class="stat-hbar-name">${escapeHtml(g.name)}${badgeStr}</span>
           <span class="stat-hbar-val">${fmt(c.saved)} / ${fmt(g.target)} · ${Math.round(c.percent)}%</span>
         </div>
         <div class="hbar-track">
@@ -1600,7 +2197,7 @@ function periodSummaryCard(contribByMonth, range) {
   `;
 }
 
-function monthlyContribsCard(contribByMonth, range) {
+function monthlyContribsCard(contribByMonth) {
   const months = Object.keys(contribByMonth).sort();
   if (!months.length) return '';
 
@@ -1780,7 +2377,7 @@ function renderStats() {
   if (hasContribs) {
     html += periodSummaryCard(contribByMonth, range);
     if (Object.keys(contribByMonth).length) {
-      html += monthlyContribsCard(contribByMonth, range);
+      html += monthlyContribsCard(contribByMonth);
       html += cumulativeChart(contribByMonth, range);
     }
   }
@@ -1789,7 +2386,7 @@ function renderStats() {
 }
 
 /* ============================================================
-   ДЕЙСТВИЯ
+   ДЕЙСТВИЯ СПИСКОВ
    ============================================================ */
 
 function addMonthlyIncome() {
@@ -1832,59 +2429,6 @@ function addExpense() {
   state.expenses.push({ id: uid(), name, amount });
   nameEl.value = ''; amtEl.value = ''; nameEl.focus();
   save(); renderExpenses(); renderTotal(); renderCalendar(); renderStats();
-}
-
-function openGoalForm() {
-  const form = document.getElementById('goalForm');
-  form.classList.add('open');
-  if (!document.getElementById('goalDeadline').value) {
-    const now = new Date();
-    const d = new Date(now.getFullYear() + 1, now.getMonth(), 1);
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    document.getElementById('goalDeadline').value = `${y}-${m}`;
-  }
-  document.getElementById('goalName').focus();
-}
-
-function closeGoalForm() {
-  document.getElementById('goalForm').classList.remove('open');
-  ['goalName','goalTarget','goalDeadline'].forEach(id => {
-    document.getElementById(id).value = '';
-  });
-  document.getElementById('goalSaved').value = '0';
-  document.getElementById('goalUseRate').checked = false;
-  document.getElementById('goalRateGroup').style.display = 'none';
-  document.getElementById('goalRate').value = '8';
-}
-
-function saveGoal() {
-  const name = document.getElementById('goalName').value.trim();
-  const target = parseFloat(document.getElementById('goalTarget').value);
-  const saved = parseFloat(document.getElementById('goalSaved').value) || 0;
-  const deadline = document.getElementById('goalDeadline').value;
-  const useRate = document.getElementById('goalUseRate').checked;
-  const rate = useRate ? (parseFloat(document.getElementById('goalRate').value) || 0) : 0;
-
-  if (!name) { document.getElementById('goalName').focus(); return; }
-  if (isNaN(target) || target <= 0) { document.getElementById('goalTarget').focus(); return; }
-  if (!deadline) { document.getElementById('goalDeadline').focus(); return; }
-
-  const contributions = [];
-  if (saved > 0) {
-    contributions.push({ id: uid(), date: todayStr(), amount: saved });
-  }
-
-  state.goals.push({ id: uid(), name, target, deadline, contributions, rate });
-  save(); closeGoalForm(); renderGoals(); renderExpenses(); renderTotal(); renderCalendar(); renderStats();
-}
-
-function setDeadlineOffset(months) {
-  const now = new Date();
-  const d = new Date(now.getFullYear(), now.getMonth() + months, 1);
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  document.getElementById('goalDeadline').value = `${y}-${m}`;
 }
 
 /* ============================================================
@@ -1949,15 +2493,23 @@ function exportCSV() {
   push();
 
   push('ДОЛГОСРОЧНЫЕ ЦЕЛИ');
-  push('Название', 'Цель (₽)', 'Отложено (₽)', 'Осталось (₽)', 'Срок', 'Месяцев', 'Ставка %', 'В месяц (₽)', 'Доход от % (₽)', 'Прогресс', 'Взносов');
+  push('Название', 'Цель (₽)', 'Отложено (₽)', 'Осталось (₽)', 'Срок', 'Месяцев',
+       'Ставка %', 'Индексация %', 'Взнос 1-й год (₽)', 'Взнос последний (₽)',
+       'Доход от % (₽)', 'Прогресс', 'Взносов');
+
   const sorted = [...state.goals].sort((a, b) => (a.deadline || '').localeCompare(b.deadline || ''));
   sorted.forEach(g => {
     const c = calcGoal(g);
+    const lastMonthly = c.yearBreakdown.length
+      ? c.yearBreakdown[c.yearBreakdown.length - 1].monthly
+      : c.perMonth;
     push(
       g.name, fmtNum(g.target), fmtNum(c.saved), fmtNum(c.remaining),
       formatDeadline(g.deadline), c.months,
       c.rateAnnual > 0 ? c.rateAnnual.toString() : '',
+      c.indexAnnual > 0 ? c.indexAnnual.toString() : '',
       fmtNum(c.perMonth),
+      fmtNum(lastMonthly),
       c.interestEarned > 0 ? fmtNum(c.interestEarned) : '',
       Math.round(c.percent) + '%',
       (g.contributions || []).length
@@ -1991,7 +2543,7 @@ function exportCSV() {
 function exportJSON() {
   const data = {
     exportedAt: new Date().toISOString(),
-    version: 4,
+    version: 5,
     monthlyIncomes: state.monthlyIncomes,
     oneTimeIncomes: state.oneTimeIncomes,
     expenses: state.expenses,
@@ -2058,6 +2610,7 @@ function importJSON(file) {
               deadline: g.deadline || '',
               contributions,
               rate: Number(g.rate) || 0,
+              indexRate: Number(g.indexRate) || 0,
             };
           })
         : [];
@@ -2081,13 +2634,31 @@ function importJSON(file) {
    ============================================================ */
 
 let toastTimer;
-function showToast(msg, isError) {
+function showToast(msg, isError, action) {
   const el = document.getElementById('toast');
-  el.textContent = msg;
+  document.getElementById('toastMsg').textContent = msg;
+  const actionBtn = document.getElementById('toastAction');
+
+  if (action) {
+    actionBtn.textContent = action.label;
+    actionBtn.style.display = 'inline-block';
+    actionBtn.onclick = () => {
+      hideToast();
+      action.onClick();
+    };
+  } else {
+    actionBtn.style.display = 'none';
+    actionBtn.onclick = null;
+  }
+
   el.classList.toggle('error', !!isError);
   el.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+  toastTimer = setTimeout(hideToast, action ? 5500 : 2200);
+}
+
+function hideToast() {
+  document.getElementById('toast').classList.remove('show');
 }
 
 function switchTab(name) {
@@ -2138,24 +2709,46 @@ document.getElementById('expAmount').addEventListener('keydown', e => {
 });
 
 document.getElementById('toggleGoalForm').onclick = () => {
-  const form = document.getElementById('goalForm');
-  if (form.classList.contains('open')) closeGoalForm();
-  else openGoalForm();
+  openGoalModal('add');
 };
-document.getElementById('cancelGoalBtn').onclick = closeGoalForm;
-document.getElementById('saveGoalBtn').onclick = saveGoal;
 
-document.querySelectorAll('.quick-dates button').forEach(btn => {
-  btn.onclick = () => setDeadlineOffset(Number(btn.dataset.addMonths));
+document.getElementById('goalModalClose').onclick = closeGoalModal;
+document.getElementById('goalModalCancel').onclick = closeGoalModal;
+document.getElementById('goalModalSave').onclick = saveGoalFromModal;
+
+document.getElementById('goalModal').addEventListener('click', e => {
+  if (e.target.id === 'goalModal') closeGoalModal();
 });
 
-// Сложный процент в форме цели
-document.getElementById('goalUseRate').addEventListener('change', e => {
-  document.getElementById('goalRateGroup').style.display = e.target.checked ? 'block' : 'none';
-  if (e.target.checked) document.getElementById('goalRate').focus();
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && document.getElementById('goalModal').style.display !== 'none') {
+    closeGoalModal();
+  }
 });
 
-// Фильтр периода в статистике
+document.getElementById('mGoalUseRate').addEventListener('change', e => {
+  const group = document.getElementById('mGoalRateGroup');
+  group.style.display = e.target.checked ? 'block' : 'none';
+  if (e.target.checked) document.getElementById('mGoalRate').focus();
+});
+
+document.getElementById('mGoalUseIndex').addEventListener('change', e => {
+  const group = document.getElementById('mGoalIndexGroup');
+  group.style.display = e.target.checked ? 'block' : 'none';
+  if (e.target.checked) document.getElementById('mGoalIndex').focus();
+});
+
+document.querySelectorAll('#mGoalQuickDates button').forEach(btn => {
+  btn.onclick = () => setModalDeadlineOffset(Number(btn.dataset.addMonths));
+});
+
+document.getElementById('mGoalName').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('mGoalTarget').focus();
+});
+document.getElementById('mGoalTarget').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('mGoalSaved').focus();
+});
+
 document.getElementById('periodSelect').addEventListener('change', e => {
   document.getElementById('customPeriodRow').style.display =
     e.target.value === 'custom' ? 'flex' : 'none';
@@ -2164,7 +2757,6 @@ document.getElementById('periodSelect').addEventListener('change', e => {
 document.getElementById('periodFrom').addEventListener('change', renderStats);
 document.getElementById('periodTo').addEventListener('change', renderStats);
 
-// Дефолтное значение кастомного периода — 6 мес назад и сейчас
 (function initCustomPeriod() {
   const now = new Date();
   const sixAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
