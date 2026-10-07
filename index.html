@@ -19,12 +19,13 @@
     --green: #3ddc97;
     --yellow: #ffc857;
     --red: #ff5c7c;
+    --blue: #5cc8ff;
   }
 
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background: var(--bg); color: var(--text);
-    min-height: 100vh; padding: 24px 16px 200px;
+    min-height: 100vh; padding: 24px 16px 240px;
     background-image:
       radial-gradient(circle at 10% 0%, rgba(124,92,255,0.15), transparent 40%),
       radial-gradient(circle at 90% 100%, rgba(61,220,151,0.08), transparent 40%);
@@ -41,7 +42,6 @@
   }
   .subtitle { color: var(--muted); font-size: 14px; margin-top: 6px; }
 
-  /* Табы */
   .tabs {
     display: flex; gap: 4px; margin-bottom: 20px;
     background: var(--card); border: 1px solid var(--border);
@@ -95,11 +95,6 @@
     filter: invert(0.6); cursor: pointer;
   }
 
-  input.salary-input {
-    font-size: 22px; font-weight: 700; padding: 14px 16px;
-    font-variant-numeric: tabular-nums;
-  }
-
   button.btn {
     background: var(--accent); color: #fff; border: none; border-radius: 10px;
     padding: 11px 18px; font-size: 15px; font-weight: 600; cursor: pointer;
@@ -117,23 +112,65 @@
   .row > input:first-child { flex: 1; min-width: 0; }
   .row > input.amt { max-width: 140px; flex-shrink: 0; }
 
-  /* Ежемесячные расходы */
-  .expense-row {
+  /* Общий список строк (доходы и расходы) */
+  .item-row {
     display: flex; justify-content: space-between; align-items: center;
     padding: 11px 14px; background: var(--card-2); border-radius: 10px;
     margin-bottom: 8px; animation: slideIn 0.2s ease;
+    gap: 8px;
   }
-  .expense-row .name { font-size: 15px; }
-  .expense-row .amt {
-    font-weight: 700; font-variant-numeric: tabular-nums; margin-right: 10px;
+  .item-row .info { min-width: 0; flex: 1; }
+  .item-row .name {
+    font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
-  .expense-row .del, .goal-card .del, .contrib-item .del {
+  .item-row .sub {
+    font-size: 11px; color: var(--muted); margin-top: 2px;
+    text-transform: uppercase; letter-spacing: 0.4px; font-weight: 600;
+  }
+  .item-row .sub.current {
+    color: var(--green);
+  }
+  .item-row .right {
+    display: flex; align-items: center; flex-shrink: 0;
+  }
+  .item-row .amt {
+    font-weight: 700; font-variant-numeric: tabular-nums; margin-right: 6px;
+  }
+  .item-row .amt.income { color: var(--green); }
+
+  .item-row .del {
     background: transparent; border: none; color: var(--muted);
     cursor: pointer; font-size: 18px; padding: 2px 6px; border-radius: 6px;
     line-height: 1; transition: all 0.15s;
   }
-  .expense-row .del:hover, .goal-card .del:hover, .contrib-item .del:hover {
+  .item-row .del:hover {
     color: var(--red); background: rgba(255,92,124,0.1);
+  }
+
+  /* Итого под списком */
+  .list-total {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 14px; margin-top: 4px;
+    border-top: 1px dashed var(--border);
+    font-size: 14px; font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .list-total .label { color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: 0.4px; }
+  .list-total .val { font-size: 16px; }
+  .list-total .val.income { color: var(--green); }
+
+  /* Авто-строка целей */
+  .item-row.auto {
+    background: rgba(124,92,255,0.08);
+    border: 1px solid rgba(124,92,255,0.25);
+    border-left: 3px solid var(--accent);
+  }
+  .item-row.auto .name { color: #b3a4ff; }
+  .item-row.auto .auto-badge {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.5px; color: var(--accent);
+    background: rgba(124,92,255,0.15); padding: 2px 6px;
+    border-radius: 4px; margin-left: 6px;
   }
 
   /* Цели */
@@ -172,7 +209,6 @@
   .goal-monthly.overdue { color: var(--red); }
   .goal-monthly.done { color: var(--green); }
 
-  /* Форма взноса */
   .contrib-form {
     display: flex; gap: 6px; margin-top: 12px;
     align-items: center;
@@ -190,7 +226,6 @@
   }
   .contrib-form button:hover { background: var(--accent-hover); }
 
-  /* История */
   details.contrib-history {
     margin-top: 12px; border-top: 1px solid var(--border); padding-top: 10px;
   }
@@ -216,6 +251,14 @@
   }
   .contrib-item .date { color: var(--muted); }
   .contrib-item .amt { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .contrib-item .del {
+    background: transparent; border: none; color: var(--muted);
+    cursor: pointer; font-size: 16px; padding: 0 4px; border-radius: 4px;
+    line-height: 1; transition: all 0.15s;
+  }
+  .contrib-item .del:hover {
+    color: var(--red); background: rgba(255,92,124,0.1);
+  }
 
   .contrib-chart {
     width: 100%; height: 50px; display: block; margin: 10px 0 6px;
@@ -334,6 +377,8 @@
     padding: 3px 0; color: var(--muted); font-variant-numeric: tabular-nums;
   }
   .total-row .v { color: var(--text); font-weight: 600; }
+  .total-row .v.income { color: var(--green); }
+  .total-row.sub .v { color: var(--muted); font-weight: 500; font-size: 12px; }
   .total-divider { height: 1px; background: var(--border); margin: 8px 0; }
   .total-main {
     display: flex; justify-content: space-between; align-items: baseline;
@@ -378,10 +423,9 @@
 
   <header>
     <h1>💰 Планировщик финансов</h1>
-    <p class="subtitle">ЗП → обязательное → долгосрочные цели</p>
+    <p class="subtitle">Доход → расходы + цели</p>
   </header>
 
-  <!-- Табы -->
   <nav class="tabs">
     <button class="tab active" data-tab="plan">📋 План</button>
     <button class="tab" data-tab="calendar">📅 Календарь</button>
@@ -390,11 +434,30 @@
   <!-- ВКЛАДКА: ПЛАН -->
   <div id="tab-plan" class="tab-content">
 
+    <!-- Месячный доход -->
     <section class="card">
-      <div class="card-title">Зарплата в месяц</div>
-      <input type="number" class="salary-input" id="salary" placeholder="0" min="0" step="1000">
+      <div class="card-title">Месячный доход</div>
+      <div id="monthlyIncomeList"></div>
+      <div class="row" style="margin-top:12px">
+        <input type="text" id="miName" placeholder="Зарплата, проценты с вклада, аренда...">
+        <input type="number" class="amt" id="miAmount" placeholder="₽" min="0" step="1000">
+        <button class="btn" id="addMiBtn">+</button>
+      </div>
     </section>
 
+    <!-- Разовый доход -->
+    <section class="card">
+      <div class="card-title">Разовый доход</div>
+      <div id="oneTimeIncomeList"></div>
+      <div class="row" style="margin-top:12px;flex-wrap:wrap">
+        <input type="text" id="oiName" placeholder="Премия, продал что-то...">
+        <input type="number" class="amt" id="oiAmount" placeholder="₽" min="0" step="1000">
+        <input type="date" id="oiDate" style="max-width:150px">
+        <button class="btn" id="addOiBtn">+</button>
+      </div>
+    </section>
+
+    <!-- Ежемесячные расходы -->
     <section class="card">
       <div class="card-title">Ежемесячные расходы</div>
       <div id="expenseList"></div>
@@ -405,6 +468,7 @@
       </div>
     </section>
 
+    <!-- Долгосрочные цели -->
     <section class="card">
       <div class="card-title">
         Долгосрочные цели
@@ -475,16 +539,20 @@
 <!-- Итоговая панель -->
 <div class="total-bar">
   <div class="total-row">
-    <span>ЗП в месяц</span>
-    <span class="v" id="tSalary">0 ₽</span>
+    <span>Месячный доход</span>
+    <span class="v income" id="tIncome">0 ₽</span>
   </div>
   <div class="total-row">
     <span>Обязательные расходы</span>
     <span class="v" id="tExpenses">−0 ₽</span>
   </div>
-  <div class="total-row">
-    <span>Накопления на цели</span>
+  <div class="total-row sub">
+    <span>🎯 в т.ч. накопления на цели</span>
     <span class="v" id="tGoals">−0 ₽</span>
+  </div>
+  <div class="total-row" id="tOneTimeRow" style="display:none">
+    <span>Разовые (в этом месяце)</span>
+    <span class="v income" id="tOneTime">+0 ₽</span>
   </div>
   <div class="total-divider"></div>
   <div class="total-main">
@@ -499,7 +567,8 @@
 const STORAGE_KEY = 'year_planner_v1';
 
 let state = {
-  salary: 0,
+  monthlyIncomes: [],
+  oneTimeIncomes: [],
   expenses: [],
   goals: [],
 };
@@ -515,19 +584,37 @@ function todayStr() {
   return `${y}-${m}-${day}`;
 }
 
+function currentMonthKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
 // ===== Сохранение / загрузка =====
 function save() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
 
 function load() {
+  let raw;
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    raw = localStorage.getItem(STORAGE_KEY);
     if (raw) state = { ...state, ...JSON.parse(raw) };
   } catch (e) { console.warn(e); }
 
-  // Миграция: старый формат saved → contributions
-  state.goals = (state.goals || []).map(g => {
+  // Миграция: старый формат salary → monthlyIncomes
+  if ((typeof state.salary === 'number') && state.salary > 0 && !state.monthlyIncomes?.length) {
+    state.monthlyIncomes = [{ id: uid(), name: 'Зарплата', amount: state.salary }];
+  }
+  delete state.salary;
+
+  // Гарантируем массивы
+  if (!Array.isArray(state.monthlyIncomes)) state.monthlyIncomes = [];
+  if (!Array.isArray(state.oneTimeIncomes)) state.oneTimeIncomes = [];
+  if (!Array.isArray(state.expenses)) state.expenses = [];
+  if (!Array.isArray(state.goals)) state.goals = [];
+
+  // Миграция целей: saved → contributions
+  state.goals = state.goals.map(g => {
     if (!Array.isArray(g.contributions)) {
       const contribs = [];
       const savedNum = Number(g.saved) || 0;
@@ -539,9 +626,6 @@ function load() {
     }
     return g;
   });
-
-  state.expenses = state.expenses || [];
-  state.salary = Number(state.salary) || 0;
 }
 
 // ===== Утилиты =====
@@ -560,7 +644,6 @@ const fmtNum = n => new Intl.NumberFormat('ru-RU', {
 }).format(Math.round(n));
 
 const MONTHS_SHORT = ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
-const MONTHS_FULL = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
 
 function formatDeadline(deadline) {
   if (!deadline) return '';
@@ -617,22 +700,144 @@ function calcGoal(g) {
   return { saved, remaining, diff, months, perMonth, overdue, done, percent };
 }
 
-// ===== Рендер: расходы =====
-function renderExpenses() {
-  const el = document.getElementById('expenseList');
-  if (!state.expenses.length) {
-    el.innerHTML = '<span class="empty-hint">Пока пусто — добавь аренду, подписки, продукты</span>';
+function totalMonthlyIncome() {
+  return state.monthlyIncomes.reduce((s, i) => s + Number(i.amount || 0), 0);
+}
+
+function totalBaseExpenses() {
+  return state.expenses.reduce((s, e) => s + Number(e.amount || 0), 0);
+}
+
+function totalGoalsPerMonth() {
+  return state.goals.reduce((s, g) => s + calcGoal(g).perMonth, 0);
+}
+
+function totalOneTimeThisMonth() {
+  const ym = currentMonthKey();
+  return state.oneTimeIncomes
+    .filter(i => (i.date || '').slice(0, 7) === ym)
+    .reduce((s, i) => s + Number(i.amount || 0), 0);
+}
+
+// ===== Рендер: месячные доходы =====
+function renderMonthlyIncomes() {
+  const el = document.getElementById('monthlyIncomeList');
+  if (!state.monthlyIncomes.length) {
+    el.innerHTML = '<span class="empty-hint">Пока пусто — добавь зарплату, проценты с вклада и т.д.</span>';
     return;
   }
-  el.innerHTML = state.expenses.map(e => `
-    <div class="expense-row">
-      <span class="name">${escapeHtml(e.name)}</span>
-      <span style="display:flex;align-items:center">
-        <span class="amt">${fmt(e.amount)}</span>
-        <button class="del" data-id="${e.id}" title="Удалить">×</button>
-      </span>
+  el.innerHTML = state.monthlyIncomes.map(i => `
+    <div class="item-row">
+      <div class="info">
+        <div class="name">${escapeHtml(i.name)}</div>
+      </div>
+      <div class="right">
+        <span class="amt income">+${fmt(i.amount)}</span>
+        <button class="del" data-id="${i.id}" title="Удалить">×</button>
+      </div>
     </div>
-  `).join('');
+  `).join('') + `
+    <div class="list-total">
+      <span class="label">Итого в месяц</span>
+      <span class="val income">${fmt(totalMonthlyIncome())}</span>
+    </div>
+  `;
+  el.querySelectorAll('.del').forEach(btn => {
+    btn.onclick = () => {
+      state.monthlyIncomes = state.monthlyIncomes.filter(x => x.id !== btn.dataset.id);
+      save(); renderMonthlyIncomes(); renderTotal(); renderCalendar();
+    };
+  });
+}
+
+// ===== Рендер: разовые доходы =====
+function renderOneTimeIncomes() {
+  const el = document.getElementById('oneTimeIncomeList');
+  if (!state.oneTimeIncomes.length) {
+    el.innerHTML = '<span class="empty-hint">Премии, продажи, подарки — всё сюда</span>';
+    return;
+  }
+  const sorted = [...state.oneTimeIncomes].sort((a, b) =>
+    (b.date || '').localeCompare(a.date || '')
+  );
+  const ym = currentMonthKey();
+
+  el.innerHTML = sorted.map(i => {
+    const isCurrent = (i.date || '').slice(0, 7) === ym;
+    return `
+      <div class="item-row">
+        <div class="info">
+          <div class="name">${escapeHtml(i.name)}</div>
+          <div class="sub ${isCurrent ? 'current' : ''}">
+            ${formatDateRu(i.date)}${isCurrent ? ' · этот месяц' : ''}
+          </div>
+        </div>
+        <div class="right">
+          <span class="amt income">+${fmt(i.amount)}</span>
+          <button class="del" data-id="${i.id}" title="Удалить">×</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  el.querySelectorAll('.del').forEach(btn => {
+    btn.onclick = () => {
+      state.oneTimeIncomes = state.oneTimeIncomes.filter(x => x.id !== btn.dataset.id);
+      save(); renderOneTimeIncomes(); renderTotal();
+    };
+  });
+}
+
+// ===== Рендер: расходы (с автострокой целей) =====
+function renderExpenses() {
+  const el = document.getElementById('expenseList');
+  const goalsPerMonth = totalGoalsPerMonth();
+  const baseTotal = totalBaseExpenses();
+  const grandTotal = baseTotal + goalsPerMonth;
+
+  let html = '';
+  if (!state.expenses.length) {
+    html += '<span class="empty-hint">Пока пусто — добавь аренду, подписки, продукты</span>';
+  } else {
+    html += state.expenses.map(e => `
+      <div class="item-row">
+        <div class="info">
+          <div class="name">${escapeHtml(e.name)}</div>
+        </div>
+        <div class="right">
+          <span class="amt">−${fmt(e.amount)}</span>
+          <button class="del" data-id="${e.id}" title="Удалить">×</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // Автострока накоплений
+  if (goalsPerMonth > 0) {
+    html += `
+      <div class="item-row auto" style="margin-top:12px">
+        <div class="info">
+          <div class="name">🎯 Накопления на цели<span class="auto-badge">авто</span></div>
+          <div class="sub">Из секции «Долгосрочные цели»</div>
+        </div>
+        <div class="right">
+          <span class="amt">−${fmt(goalsPerMonth)}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  if (state.expenses.length || goalsPerMonth > 0) {
+    html += `
+      <div class="list-total">
+        <span class="label">Итого в месяц</span>
+        <span class="val">−${fmt(grandTotal)}</span>
+      </div>
+    `;
+  }
+
+  el.innerHTML = html;
+
   el.querySelectorAll('.del').forEach(btn => {
     btn.onclick = () => {
       state.expenses = state.expenses.filter(x => x.id !== btn.dataset.id);
@@ -746,25 +951,22 @@ function renderGoals() {
     `;
   }).join('');
 
-  // Удаление цели
   el.querySelectorAll('.goal-head .del').forEach(btn => {
     btn.onclick = () => {
       state.goals = state.goals.filter(x => x.id !== btn.dataset.id);
-      save(); renderGoals(); renderTotal(); renderCalendar();
+      save(); renderGoals(); renderExpenses(); renderTotal(); renderCalendar();
     };
   });
 
-  // Удаление взноса
   el.querySelectorAll('[data-contrib-id]').forEach(btn => {
     btn.onclick = () => {
       const g = state.goals.find(x => x.id === btn.dataset.goalId);
       if (!g) return;
       g.contributions = g.contributions.filter(c => c.id !== btn.dataset.contribId);
-      save(); renderGoals(); renderTotal(); renderCalendar();
+      save(); renderGoals(); renderExpenses(); renderTotal(); renderCalendar();
     };
   });
 
-  // Добавление взноса
   el.querySelectorAll('[data-add-contrib]').forEach(btn => {
     btn.onclick = () => {
       const form = btn.closest('.contrib-form');
@@ -779,11 +981,10 @@ function renderGoals() {
       const g = state.goals.find(x => x.id === goalId);
       if (!g) return;
       g.contributions.push({ id: uid(), date, amount });
-      save(); renderGoals(); renderTotal(); renderCalendar();
+      save(); renderGoals(); renderExpenses(); renderTotal(); renderCalendar();
     };
   });
 
-  // Enter в поле суммы
   el.querySelectorAll('[data-contrib-input]').forEach(inp => {
     inp.addEventListener('keydown', e => {
       if (e.key === 'Enter') {
@@ -795,14 +996,24 @@ function renderGoals() {
 
 // ===== Рендер: итог =====
 function renderTotal() {
-  const salary = Number(state.salary) || 0;
-  const expTotal = state.expenses.reduce((s, e) => s + Number(e.amount || 0), 0);
-  const goalsTotal = state.goals.reduce((s, g) => s + calcGoal(g).perMonth, 0);
-  const free = salary - expTotal - goalsTotal;
+  const income = totalMonthlyIncome();
+  const baseExp = totalBaseExpenses();
+  const goalsPerMonth = totalGoalsPerMonth();
+  const totalExp = baseExp + goalsPerMonth;
+  const oneTime = totalOneTimeThisMonth();
+  const free = income - totalExp + oneTime;
 
-  document.getElementById('tSalary').textContent = fmt(salary);
-  document.getElementById('tExpenses').textContent = '−' + fmt(expTotal);
-  document.getElementById('tGoals').textContent = '−' + fmt(goalsTotal);
+  document.getElementById('tIncome').textContent = fmt(income);
+  document.getElementById('tExpenses').textContent = '−' + fmt(totalExp);
+  document.getElementById('tGoals').textContent = '−' + fmt(goalsPerMonth);
+
+  const oneTimeRow = document.getElementById('tOneTimeRow');
+  if (oneTime > 0) {
+    oneTimeRow.style.display = 'flex';
+    document.getElementById('tOneTime').textContent = '+' + fmt(oneTime);
+  } else {
+    oneTimeRow.style.display = 'none';
+  }
 
   const freeEl = document.getElementById('tFree');
   freeEl.textContent = fmt(free);
@@ -813,9 +1024,9 @@ function renderTotal() {
 function renderCalendar() {
   const el = document.getElementById('calendarContent');
 
-  const salary = Number(state.salary) || 0;
-  const expTotal = state.expenses.reduce((s, e) => s + Number(e.amount || 0), 0);
-  const free = salary - expTotal;
+  const income = totalMonthlyIncome();
+  const baseExp = totalBaseExpenses();
+  const free = income - baseExp;
 
   const activeGoals = state.goals.filter(g => !calcGoal(g).done);
 
@@ -837,7 +1048,6 @@ function renderCalendar() {
 
   const rows = [];
   let peak = { month: startMonth, total: 0 };
-  let totalSum = 0;
 
   for (let m = startMonth; m <= furthest; m++) {
     const active = goalData.filter(g => m <= g.endMonth);
@@ -845,9 +1055,8 @@ function renderCalendar() {
 
     const total = active.reduce((s, g) => s + g.calc.perMonth, 0);
     if (total > peak.total) peak = { month: m, total };
-    totalSum += total;
 
-    const overload = salary > 0 && total > free;
+    const overload = income > 0 && total > free;
     rows.push({
       label: monthLabel(m),
       total,
@@ -858,7 +1067,7 @@ function renderCalendar() {
     });
   }
 
-  const peakWarn = peak.total > free && salary > 0;
+  const peakWarn = peak.total > free && income > 0;
   const warningBanner = peakWarn
     ? `<div class="warning-banner">
         ⚠️ В пиковый месяц (<strong>${monthLabel(peak.month)}</strong>) нужно отложить
@@ -870,7 +1079,7 @@ function renderCalendar() {
   const summary = `
     <div class="cal-summary">
       <div class="cal-sum-row">
-        <span>Свободно в месяц (ЗП − расходы)</span>
+        <span>Свободно в месяц (доход − расходы)</span>
         <span class="v">${fmt(free)}</span>
       </div>
       <div class="cal-sum-row">
@@ -896,6 +1105,35 @@ function renderCalendar() {
 }
 
 // ===== Действия =====
+function addMonthlyIncome() {
+  const nameEl = document.getElementById('miName');
+  const amtEl = document.getElementById('miAmount');
+  const name = nameEl.value.trim();
+  const amount = parseFloat(amtEl.value);
+  if (!name) { nameEl.focus(); return; }
+  if (isNaN(amount) || amount < 0) { amtEl.focus(); return; }
+
+  state.monthlyIncomes.push({ id: uid(), name, amount });
+  nameEl.value = ''; amtEl.value = ''; nameEl.focus();
+  save(); renderMonthlyIncomes(); renderTotal(); renderCalendar();
+}
+
+function addOneTimeIncome() {
+  const nameEl = document.getElementById('oiName');
+  const amtEl = document.getElementById('oiAmount');
+  const dateEl = document.getElementById('oiDate');
+  const name = nameEl.value.trim();
+  const amount = parseFloat(amtEl.value);
+  const date = dateEl.value || todayStr();
+
+  if (!name) { nameEl.focus(); return; }
+  if (isNaN(amount) || amount < 0) { amtEl.focus(); return; }
+
+  state.oneTimeIncomes.push({ id: uid(), name, amount, date });
+  nameEl.value = ''; amtEl.value = ''; dateEl.value = todayStr(); nameEl.focus();
+  save(); renderOneTimeIncomes(); renderTotal();
+}
+
 function addExpense() {
   const nameEl = document.getElementById('expName');
   const amtEl = document.getElementById('expAmount');
@@ -946,7 +1184,7 @@ function saveGoal() {
   }
 
   state.goals.push({ id: uid(), name, target, deadline, contributions });
-  save(); closeGoalForm(); renderGoals(); renderTotal(); renderCalendar();
+  save(); closeGoalForm(); renderGoals(); renderExpenses(); renderTotal(); renderCalendar();
 }
 
 function setDeadlineOffset(months) {
@@ -974,10 +1212,12 @@ function csvEscape(v) {
 }
 
 function exportCSV() {
-  const salary = Number(state.salary) || 0;
-  const expTotal = state.expenses.reduce((s, e) => s + Number(e.amount || 0), 0);
-  const goalsTotal = state.goals.reduce((s, g) => s + calcGoal(g).perMonth, 0);
-  const free = salary - expTotal - goalsTotal;
+  const income = totalMonthlyIncome();
+  const baseExp = totalBaseExpenses();
+  const goalsPerMonth = totalGoalsPerMonth();
+  const totalExp = baseExp + goalsPerMonth;
+  const oneTime = totalOneTimeThisMonth();
+  const free = income - totalExp + oneTime;
 
   const rows = [];
   const push = (...cells) => rows.push(cells.map(csvEscape).join(';'));
@@ -986,15 +1226,31 @@ function exportCSV() {
   push('Дата экспорта', todayStr());
   push();
 
-  push('ЗАРПЛАТА В МЕСЯЦ');
-  push(fmtNum(salary), '₽');
+  push('МЕСЯЧНЫЙ ДОХОД');
+  push('Источник', 'Сумма (₽)');
+  state.monthlyIncomes.forEach(i => push(i.name, fmtNum(i.amount)));
+  if (!state.monthlyIncomes.length) push('—', '0');
+  push('ИТОГО в месяц', fmtNum(income));
+  push();
+
+  push('РАЗОВЫЙ ДОХОД');
+  push('Название', 'Дата', 'Сумма (₽)');
+  [...state.oneTimeIncomes]
+    .sort((a, b) => (a.date || '').localeCompare(b.date || ''))
+    .forEach(i => push(i.name, i.date || '', fmtNum(i.amount)));
+  if (!state.oneTimeIncomes.length) push('—', '', '0');
+  push('ИТОГО разовых', fmtNum(state.oneTimeIncomes.reduce((s, i) => s + Number(i.amount || 0), 0)));
+  push('В том числе в этом месяце', fmtNum(oneTime));
   push();
 
   push('ЕЖЕМЕСЯЧНЫЕ РАСХОДЫ');
   push('Название', 'Сумма (₽)');
   state.expenses.forEach(e => push(e.name, fmtNum(e.amount)));
   if (!state.expenses.length) push('—', '0');
-  push('ИТОГО расходов', fmtNum(expTotal));
+  push('ИТОГО обычных расходов', fmtNum(baseExp));
+  push();
+  push('НАКОПЛЕНИЯ НА ЦЕЛИ (авто)', fmtNum(goalsPerMonth));
+  push('ИТОГО РАСХОДОВ В МЕСЯЦ', fmtNum(totalExp));
   push();
 
   push('ДОЛГОСРОЧНЫЕ ЦЕЛИ');
@@ -1010,7 +1266,7 @@ function exportCSV() {
     );
   });
   if (!state.goals.length) push('—');
-  push('ИТОГО в месяц на цели', fmtNum(goalsTotal));
+  push('ИТОГО в месяц на цели', fmtNum(goalsPerMonth));
   push();
 
   push('ВЗНОСЫ');
@@ -1023,9 +1279,10 @@ function exportCSV() {
   push();
 
   push('ИТОГ');
-  push('ЗП в месяц', fmtNum(salary));
-  push('Обязательные расходы', '−' + fmtNum(expTotal));
-  push('Накопления на цели', '−' + fmtNum(goalsTotal));
+  push('Месячный доход', fmtNum(income));
+  push('Расходы в месяц (вкл. цели)', '−' + fmtNum(totalExp));
+  push('  в т.ч. накопления на цели', '−' + fmtNum(goalsPerMonth));
+  push('Разовые доходы (в этом месяце)', '+' + fmtNum(oneTime));
   push('Свободно на жизнь', fmtNum(free));
 
   const csv = '\ufeff' + rows.join('\r\n');
@@ -1036,8 +1293,9 @@ function exportCSV() {
 function exportJSON() {
   const data = {
     exportedAt: new Date().toISOString(),
-    version: 2,
-    salary: state.salary,
+    version: 3,
+    monthlyIncomes: state.monthlyIncomes,
+    oneTimeIncomes: state.oneTimeIncomes,
     expenses: state.expenses,
     goals: state.goals,
   };
@@ -1052,41 +1310,68 @@ function importJSON(file) {
     try {
       const data = JSON.parse(e.target.result);
       if (typeof data !== 'object' || data === null) throw new Error('не объект');
-      if (!Array.isArray(data.expenses) || !Array.isArray(data.goals)) {
-        throw new Error('нет полей expenses/goals');
-      }
 
       if (!confirm('Импорт перезапишет все текущие данные. Продолжить?')) return;
 
-      state.salary = Number(data.salary) || 0;
-      state.expenses = data.expenses.map(x => ({
-        id: x.id || uid(),
-        name: String(x.name || ''),
-        amount: Number(x.amount) || 0,
-      }));
-      state.goals = data.goals.map(g => {
-        const contributions = Array.isArray(g.contributions)
-          ? g.contributions.map(c => ({
-              id: c.id || uid(),
-              date: c.date || todayStr(),
-              amount: Number(c.amount) || 0,
-            }))
-          : [];
-        if (!contributions.length && Number(g.saved) > 0) {
-          contributions.push({ id: uid(), date: todayStr(), amount: Number(g.saved) });
-        }
-        return {
-          id: g.id || uid(),
-          name: String(g.name || ''),
-          target: Number(g.target) || 0,
-          deadline: g.deadline || '',
-          contributions,
-        };
-      });
+      // Доход месячный
+      let monthlyIncomes = [];
+      if (Array.isArray(data.monthlyIncomes)) {
+        monthlyIncomes = data.monthlyIncomes.map(x => ({
+          id: x.id || uid(),
+          name: String(x.name || ''),
+          amount: Number(x.amount) || 0,
+        }));
+      } else if (Number(data.salary) > 0) {
+        monthlyIncomes = [{ id: uid(), name: 'Зарплата', amount: Number(data.salary) }];
+      }
+
+      // Разовый доход
+      const oneTimeIncomes = Array.isArray(data.oneTimeIncomes)
+        ? data.oneTimeIncomes.map(x => ({
+            id: x.id || uid(),
+            name: String(x.name || ''),
+            amount: Number(x.amount) || 0,
+            date: x.date || todayStr(),
+          }))
+        : [];
+
+      // Расходы
+      const expenses = Array.isArray(data.expenses)
+        ? data.expenses.map(x => ({
+            id: x.id || uid(),
+            name: String(x.name || ''),
+            amount: Number(x.amount) || 0,
+          }))
+        : [];
+
+      // Цели
+      const goals = Array.isArray(data.goals)
+        ? data.goals.map(g => {
+            const contributions = Array.isArray(g.contributions)
+              ? g.contributions.map(c => ({
+                  id: c.id || uid(),
+                  date: c.date || todayStr(),
+                  amount: Number(c.amount) || 0,
+                }))
+              : [];
+            if (!contributions.length && Number(g.saved) > 0) {
+              contributions.push({ id: uid(), date: todayStr(), amount: Number(g.saved) });
+            }
+            return {
+              id: g.id || uid(),
+              name: String(g.name || ''),
+              target: Number(g.target) || 0,
+              deadline: g.deadline || '',
+              contributions,
+            };
+          })
+        : [];
+
+      state = { monthlyIncomes, oneTimeIncomes, expenses, goals };
 
       save();
-      document.getElementById('salary').value = state.salary || '';
-      renderExpenses(); renderGoals(); renderTotal(); renderCalendar();
+      renderMonthlyIncomes(); renderOneTimeIncomes(); renderExpenses();
+      renderGoals(); renderTotal(); renderCalendar();
       showToast('Данные восстановлены');
     } catch (err) {
       console.error(err);
@@ -1121,16 +1406,30 @@ function switchTab(name) {
 // ===== Инициализация =====
 load();
 
-document.getElementById('salary').value = state.salary || '';
+document.getElementById('oiDate').value = todayStr();
 
+renderMonthlyIncomes();
+renderOneTimeIncomes();
 renderExpenses();
 renderGoals();
 renderTotal();
 renderCalendar();
 
-document.getElementById('salary').addEventListener('input', e => {
-  state.salary = parseFloat(e.target.value) || 0;
-  save(); renderTotal(); renderCalendar();
+// Обработчики
+document.getElementById('addMiBtn').onclick = addMonthlyIncome;
+document.getElementById('miName').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('miAmount').focus();
+});
+document.getElementById('miAmount').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addMonthlyIncome();
+});
+
+document.getElementById('addOiBtn').onclick = addOneTimeIncome;
+document.getElementById('oiName').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('oiAmount').focus();
+});
+document.getElementById('oiAmount').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addOneTimeIncome();
 });
 
 document.getElementById('addExpBtn').onclick = addExpense;
