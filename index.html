@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Мои финансы</title>
+<title>Планировщик года</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  
+
   :root {
     --bg: #0f1117;
     --card: #1a1d27;
@@ -17,6 +17,7 @@
     --accent: #7c5cff;
     --accent-hover: #9179ff;
     --green: #3ddc97;
+    --yellow: #ffc857;
     --red: #ff5c7c;
   }
 
@@ -25,290 +26,210 @@
     background: var(--bg);
     color: var(--text);
     min-height: 100vh;
-    padding: 24px 16px 120px;
-    background-image: 
-      radial-gradient(circle at 15% 0%, rgba(124,92,255,0.15), transparent 40%),
-      radial-gradient(circle at 85% 100%, rgba(61,220,151,0.08), transparent 40%);
+    padding: 24px 16px 200px;
+    background-image:
+      radial-gradient(circle at 10% 0%, rgba(124,92,255,0.15), transparent 40%),
+      radial-gradient(circle at 90% 100%, rgba(61,220,151,0.08), transparent 40%);
     background-attachment: fixed;
   }
 
-  .container {
-    max-width: 640px;
-    margin: 0 auto;
-  }
+  .container { max-width: 680px; margin: 0 auto; }
 
-  header {
-    margin-bottom: 28px;
-    text-align: center;
-  }
-
+  header { margin-bottom: 24px; text-align: center; }
   h1 {
-    font-size: 28px;
-    font-weight: 700;
-    letter-spacing: -0.5px;
+    font-size: 28px; font-weight: 700; letter-spacing: -0.5px;
     background: linear-gradient(135deg, #fff 0%, #a89cff 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
   }
-
-  .subtitle {
-    color: var(--muted);
-    font-size: 14px;
-    margin-top: 6px;
-  }
+  .subtitle { color: var(--muted); font-size: 14px; margin-top: 6px; }
 
   .card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 20px;
-    margin-bottom: 16px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; padding: 20px; margin-bottom: 16px;
     box-shadow: 0 8px 24px rgba(0,0,0,0.25);
   }
 
   .card-title {
-    font-size: 13px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-    color: var(--muted);
-    margin-bottom: 14px;
+    font-size: 13px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.8px; color: var(--muted); margin-bottom: 14px;
+    display: flex; justify-content: space-between; align-items: center;
   }
 
-  /* Категории */
-  .cat-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 14px;
+  .card-title button.toggle {
+    background: transparent; border: none; color: var(--accent);
+    font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
+    padding: 4px 8px; border-radius: 6px; transition: background 0.15s;
+    text-transform: none; letter-spacing: 0;
   }
-
-  .cat-tag {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: var(--card-2);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 6px 8px 6px 14px;
-    font-size: 14px;
-    transition: all 0.2s;
-  }
-
-  .cat-tag:hover {
-    border-color: var(--accent);
-  }
-
-  .cat-tag button {
-    background: transparent;
-    border: none;
-    color: var(--muted);
-    cursor: pointer;
-    font-size: 16px;
-    line-height: 1;
-    padding: 0 4px;
-    border-radius: 50%;
-    transition: all 0.15s;
-  }
-
-  .cat-tag button:hover {
-    color: var(--red);
-    background: rgba(255,92,124,0.1);
-  }
-
-  .empty-hint {
-    color: var(--muted);
-    font-size: 14px;
-    font-style: italic;
-  }
-
-  /* Формы */
-  .row {
-    display: flex;
-    gap: 8px;
-  }
+  .card-title button.toggle:hover { background: rgba(124,92,255,0.12); }
 
   input, select {
-    background: var(--card-2);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    color: var(--text);
-    font-size: 15px;
-    padding: 12px 14px;
-    outline: none;
-    font-family: inherit;
+    background: var(--card-2); border: 1px solid var(--border);
+    border-radius: 10px; color: var(--text); font-size: 15px;
+    padding: 11px 13px; outline: none; font-family: inherit; width: 100%;
     transition: border-color 0.2s, box-shadow 0.2s;
-    width: 100%;
   }
-
   input:focus, select:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(124,92,255,0.15);
+    border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124,92,255,0.15);
   }
-
   input::placeholder { color: #5b6175; }
 
+  input.salary-input {
+    font-size: 22px; font-weight: 700; padding: 14px 16px;
+    font-variant-numeric: tabular-nums;
+  }
+
   button.btn {
-    background: var(--accent);
-    color: #fff;
-    border: none;
-    border-radius: 10px;
-    padding: 12px 18px;
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-    font-family: inherit;
-    transition: all 0.2s;
-    white-space: nowrap;
+    background: var(--accent); color: #fff; border: none; border-radius: 10px;
+    padding: 11px 18px; font-size: 15px; font-weight: 600; cursor: pointer;
+    font-family: inherit; transition: all 0.2s; white-space: nowrap;
   }
-
-  button.btn:hover {
-    background: var(--accent-hover);
-    transform: translateY(-1px);
-  }
-
+  button.btn:hover { background: var(--accent-hover); transform: translateY(-1px); }
   button.btn:active { transform: translateY(0); }
 
-  button.btn-ghost {
-    background: transparent;
-    color: var(--muted);
-    border: 1px solid var(--border);
+  .row { display: flex; gap: 8px; }
+  .row > input:first-child { flex: 1; min-width: 0; }
+  .row > input.amt { max-width: 140px; flex-shrink: 0; }
+
+  /* Ежемесячные расходы */
+  .expense-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 11px 14px; background: var(--card-2); border-radius: 10px;
+    margin-bottom: 8px; animation: slideIn 0.2s ease;
+  }
+  .expense-row .name { font-size: 15px; }
+  .expense-row .amt {
+    font-weight: 700; font-variant-numeric: tabular-nums; margin-right: 10px;
+  }
+  .expense-row .del, .goal-card .del {
+    background: transparent; border: none; color: var(--muted);
+    cursor: pointer; font-size: 18px; padding: 2px 6px; border-radius: 6px;
+    line-height: 1; transition: all 0.15s;
+  }
+  .expense-row .del:hover, .goal-card .del:hover {
+    color: var(--red); background: rgba(255,92,124,0.1);
   }
 
-  button.btn-ghost:hover {
-    background: var(--card-2);
-    color: var(--text);
-  }
-
-  /* Расходы */
-  .expense-form {
-    display: grid;
-    grid-template-columns: 1fr 140px auto;
-    gap: 8px;
-    margin-bottom: 18px;
-  }
-
-  @media (max-width: 520px) {
-    .expense-form {
-      grid-template-columns: 1fr;
-    }
-  }
-
-  .expense-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 14px;
-    background: var(--card-2);
-    border-radius: 10px;
-    margin-bottom: 8px;
-    animation: slideIn 0.25s ease;
+  /* Цели */
+  .goal-card {
+    background: var(--card-2); border-radius: 12px; padding: 16px;
+    margin-bottom: 12px; animation: slideIn 0.25s ease;
     border-left: 3px solid var(--accent);
   }
 
+  .goal-head {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    margin-bottom: 10px; gap: 8px;
+  }
+  .goal-name { font-size: 16px; font-weight: 600; }
+  .goal-meta { font-size: 12px; color: var(--muted); margin-top: 3px; }
+
+  .progress-bar {
+    height: 8px; background: rgba(255,255,255,0.06); border-radius: 4px;
+    overflow: hidden; margin: 12px 0 8px;
+  }
+  .progress-fill {
+    height: 100%; background: linear-gradient(90deg, var(--accent), #a89cff);
+    border-radius: 4px; transition: width 0.4s ease;
+  }
+  .progress-fill.done { background: linear-gradient(90deg, var(--green), #6ee7b7); }
+  .progress-fill.overdue { background: linear-gradient(90deg, var(--red), #ff9c5c); }
+
+  .goal-stats {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-size: 13px; gap: 10px; flex-wrap: wrap;
+  }
+  .goal-saved { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .goal-monthly {
+    font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums;
+  }
+  .goal-monthly.overdue { color: var(--red); }
+  .goal-monthly.done { color: var(--green); }
+
+  /* Saved input inline */
+  .saved-edit {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(124,92,255,0.08); border: 1px solid rgba(124,92,255,0.2);
+    border-radius: 8px; padding: 4px 10px; margin-top: 10px;
+    font-size: 13px;
+  }
+  .saved-edit label { color: var(--muted); white-space: nowrap; }
+  .saved-edit input {
+    background: transparent; border: none; padding: 2px 4px;
+    font-size: 14px; font-weight: 600; width: 90px; text-align: right;
+    color: var(--text); font-variant-numeric: tabular-nums;
+  }
+  .saved-edit input:focus { box-shadow: none; border: none; }
+
+  /* Форма цели */
+  .goal-form {
+    display: none; gap: 8px; flex-direction: column;
+    background: var(--card-2); border-radius: 12px; padding: 14px;
+    margin-bottom: 12px; border: 1px dashed var(--border);
+  }
+  .goal-form.open { display: flex; }
+  .goal-form .form-row { display: flex; gap: 8px; }
+  .goal-form label {
+    font-size: 12px; color: var(--muted); text-transform: uppercase;
+    letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px; display: block;
+  }
+  .goal-form .form-group { flex: 1; min-width: 0; }
+  .goal-form .form-actions { display: flex; gap: 8px; justify-content: flex-end; }
+  .goal-form .form-actions .cancel {
+    background: transparent; border: 1px solid var(--border); color: var(--muted);
+  }
+
+  .empty-hint { color: var(--muted); font-size: 14px; font-style: italic; }
+
   @keyframes slideIn {
-    from { opacity: 0; transform: translateX(-10px); }
+    from { opacity: 0; transform: translateX(-8px); }
     to { opacity: 1; transform: translateX(0); }
   }
 
-  .expense-info {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 0;
-    flex: 1;
-  }
-
-  .expense-cat {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: var(--muted);
-    font-weight: 600;
-  }
-
-  .expense-name {
-    font-size: 15px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .expense-right {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-shrink: 0;
-  }
-
-  .expense-amount {
-    font-weight: 700;
-    font-size: 16px;
-    color: var(--text);
-    font-variant-numeric: tabular-nums;
-  }
-
-  .expense-item .del {
-    background: transparent;
-    border: none;
-    color: var(--muted);
-    cursor: pointer;
-    font-size: 18px;
-    padding: 2px 6px;
-    border-radius: 6px;
-    transition: all 0.15s;
-    line-height: 1;
-  }
-
-  .expense-item .del:hover {
-    color: var(--red);
-    background: rgba(255,92,124,0.1);
-  }
-
-  /* Итог */
+  /* Итоговая панель */
   .total-bar {
-    position: fixed;
-    left: 50%;
-    transform: translateX(-50%);
-    bottom: 20px;
-    width: calc(100% - 32px);
-    max-width: 640px;
-    background: linear-gradient(135deg, #232733, #1a1d27);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 18px 24px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    box-shadow: 0 12px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(124,92,255,0.1);
-    backdrop-filter: blur(10px);
-    z-index: 100;
+    position: fixed; left: 50%; transform: translateX(-50%); bottom: 16px;
+    width: calc(100% - 32px); max-width: 680px;
+    background: linear-gradient(135deg, #1e2230 0%, #1a1d27 100%);
+    border: 1px solid var(--border); border-radius: 16px;
+    padding: 16px 20px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.55), 0 0 0 1px rgba(124,92,255,0.1);
+    backdrop-filter: blur(12px); z-index: 100;
   }
 
-  .total-label {
-    font-size: 13px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: var(--muted);
-    font-weight: 600;
+  .total-row {
+    display: flex; justify-content: space-between; font-size: 13px;
+    padding: 3px 0; color: var(--muted); font-variant-numeric: tabular-nums;
+  }
+  .total-row .v { color: var(--text); font-weight: 600; }
+
+  .total-divider {
+    height: 1px; background: var(--border); margin: 8px 0;
   }
 
-  .total-value {
-    font-size: 26px;
-    font-weight: 800;
-    font-variant-numeric: tabular-nums;
+  .total-main {
+    display: flex; justify-content: space-between; align-items: baseline;
+  }
+  .total-main .label {
+    font-size: 13px; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--muted); font-weight: 600;
+  }
+  .total-main .value {
+    font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums;
     background: linear-gradient(135deg, #3ddc97, #7c5cff);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .total-main .value.negative {
+    background: linear-gradient(135deg, #ff5c7c, #ff9c5c);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
-  .total-value.negative {
-    background: linear-gradient(135deg, #ff5c7c, #ff9c5c);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+  @media (max-width: 480px) {
+    .row { flex-wrap: wrap; }
+    .row > input.amt { max-width: none; }
+    .total-main .value { font-size: 22px; }
   }
 </style>
 </head>
@@ -316,56 +237,97 @@
 <div class="container">
 
   <header>
-    <h1>💰 Мои финансы</h1>
-    <p class="subtitle">Планируй расходы осознанно</p>
+    <h1>💰 Планировщик года</h1>
+    <p class="subtitle">Распиши ЗП: обязательное + накопления</p>
   </header>
 
-  <!-- Категории -->
+  <!-- ЗП -->
   <section class="card">
-    <div class="card-title">Категории</div>
-    <div class="cat-list" id="catList"></div>
-    <div class="row">
-      <input type="text" id="newCat" placeholder="Новая категория...">
-      <button class="btn" id="addCatBtn">Добавить</button>
-    </div>
+    <div class="card-title">Зарплата в месяц</div>
+    <input type="number" class="salary-input" id="salary" placeholder="0" min="0" step="1000">
   </section>
 
-  <!-- Добавление расхода -->
+  <!-- Ежемесячные расходы -->
   <section class="card">
-    <div class="card-title">Новый расход</div>
-    <div class="expense-form">
-      <input type="text" id="expName" placeholder="Что купил?">
-      <input type="number" id="expAmount" placeholder="Сумма ₽" min="0" step="0.01">
+    <div class="card-title">Ежемесячные расходы</div>
+    <div id="expenseList"></div>
+    <div class="row" style="margin-top:12px">
+      <input type="text" id="expName" placeholder="Аренда, подписки, еда...">
+      <input type="number" class="amt" id="expAmount" placeholder="₽" min="0" step="100">
       <button class="btn" id="addExpBtn">+</button>
     </div>
-    <select id="expCat" style="display:none"></select>
-    <div class="cat-list" id="catPicker" style="margin-bottom:0"></div>
   </section>
 
-  <!-- Список расходов -->
+  <!-- Цели -->
   <section class="card">
-    <div class="card-title">Расходы</div>
-    <div id="expenseList"></div>
+    <div class="card-title">
+      Цели на год
+      <button class="toggle" id="toggleGoalForm">+ Добавить цель</button>
+    </div>
+
+    <div class="goal-form" id="goalForm">
+      <div class="form-group">
+        <label>Название</label>
+        <input type="text" id="goalName" placeholder="Отпуск, ремонт, подушка...">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Целевая сумма</label>
+          <input type="number" id="goalTarget" placeholder="₽" min="0" step="1000">
+        </div>
+        <div class="form-group">
+          <label>Уже отложено</label>
+          <input type="number" id="goalSaved" placeholder="0" min="0" step="1000" value="0">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Нужно к месяцу</label>
+        <input type="month" id="goalDeadline">
+      </div>
+      <div class="form-actions">
+        <button class="btn cancel" id="cancelGoalBtn">Отмена</button>
+        <button class="btn" id="saveGoalBtn">Сохранить</button>
+      </div>
+    </div>
+
+    <div id="goalList"></div>
   </section>
 
 </div>
 
 <!-- Итоговая панель -->
 <div class="total-bar">
-  <span class="total-label">Итого</span>
-  <span class="total-value" id="totalValue">0 ₽</span>
+  <div class="total-row">
+    <span>ЗП в месяц</span>
+    <span class="v" id="tSalary">0 ₽</span>
+  </div>
+  <div class="total-row">
+    <span>Обязательные расходы</span>
+    <span class="v" id="tExpenses">−0 ₽</span>
+  </div>
+  <div class="total-row">
+    <span>Накопления на цели</span>
+    <span class="v" id="tGoals">−0 ₽</span>
+  </div>
+  <div class="total-divider"></div>
+  <div class="total-main">
+    <span class="label">Свободно на жизнь</span>
+    <span class="value" id="tFree">0 ₽</span>
+  </div>
 </div>
 
 <script>
-const STORAGE_KEY = 'finance_app_v1';
+const STORAGE_KEY = 'year_planner_v1';
 
 let state = {
-  categories: [],
+  salary: 0,
   expenses: [],
-  selectedCat: null,
+  goals: [],
 };
 
-// ===== Загрузка / сохранение =====
+const uid = () => Math.random().toString(36).slice(2, 9);
+
+// ===== Сохранение / загрузка =====
 function save() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
@@ -374,146 +336,7 @@ function load() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) state = { ...state, ...JSON.parse(raw) };
-  } catch (e) { console.warn('load error', e); }
-
-  // Дефолтные категории при первом запуске
-  if (!state.categories.length) {
-    state.categories = ['Еда', 'Транспорт', 'Развлечения', 'Жильё'];
-  }
-  if (!state.selectedCat || !state.categories.includes(state.selectedCat)) {
-    state.selectedCat = state.categories[0] || null;
-  }
-}
-
-// ===== Форматирование =====
-const fmt = n => new Intl.NumberFormat('ru-RU', {
-  style: 'currency', currency: 'RUB', maximumFractionDigits: 0
-}).format(n);
-
-// ===== Рендер категорий =====
-function renderCategories() {
-  const list = document.getElementById('catList');
-  const picker = document.getElementById('catPicker');
-  
-  if (!state.categories.length) {
-    list.innerHTML = '<span class="empty-hint">Пока нет категорий — добавь первую 👇</span>';
-  } else {
-    list.innerHTML = state.categories.map(cat => `
-      <span class="cat-tag">
-        ${escapeHtml(cat)}
-        <button data-cat="${escapeHtml(cat)}" title="Удалить">×</button>
-      </span>
-    `).join('');
-  }
-
-  // Пикер для выбора категории расхода
-  picker.innerHTML = state.categories.map(cat => `
-    <span class="cat-tag" style="${cat === state.selectedCat ? 'border-color:var(--accent);background:rgba(124,92,255,0.15)' : ''}" data-pick="${escapeHtml(cat)}">
-      ${escapeHtml(cat)}
-    </span>
-  `).join('') || '<span class="empty-hint">Сначала добавь категории</span>';
-
-  list.querySelectorAll('button[data-cat]').forEach(btn => {
-    btn.onclick = () => removeCategory(btn.dataset.cat);
-  });
-
-  picker.querySelectorAll('[data-pick]').forEach(el => {
-    el.onclick = () => {
-      state.selectedCat = el.dataset.pick;
-      save();
-      renderCategories();
-    };
-    el.style.cursor = 'pointer';
-  });
-}
-
-// ===== Рендер расходов =====
-function renderExpenses() {
-  const list = document.getElementById('expenseList');
-  
-  if (!state.expenses.length) {
-    list.innerHTML = '<span class="empty-hint">Расходов пока нет</span>';
-  } else {
-    list.innerHTML = state.expenses.map((e, i) => `
-      <div class="expense-item">
-        <div class="expense-info">
-          <span class="expense-cat">${escapeHtml(e.category || '—')}</span>
-          <span class="expense-name">${escapeHtml(e.name)}</span>
-        </div>
-        <div class="expense-right">
-          <span class="expense-amount">${fmt(e.amount)}</span>
-          <button class="del" data-idx="${i}" title="Удалить">×</button>
-        </div>
-      </div>
-    `).join('');
-
-    list.querySelectorAll('.del').forEach(btn => {
-      btn.onclick = () => {
-        state.expenses.splice(+btn.dataset.idx, 1);
-        save();
-        renderExpenses();
-        renderTotal();
-      };
-    });
-  }
-}
-
-// ===== Итог =====
-function renderTotal() {
-  const total = state.expenses.reduce((s, e) => s + Number(e.amount || 0), 0);
-  const el = document.getElementById('totalValue');
-  el.textContent = fmt(total);
-  el.classList.toggle('negative', total < 0);
-}
-
-// ===== Действия =====
-function addCategory() {
-  const input = document.getElementById('newCat');
-  const name = input.value.trim();
-  if (!name) return;
-  if (state.categories.includes(name)) {
-    input.value = '';
-    return;
-  }
-  state.categories.push(name);
-  if (!state.selectedCat) state.selectedCat = name;
-  input.value = '';
-  save();
-  renderCategories();
-}
-
-function removeCategory(cat) {
-  state.categories = state.categories.filter(c => c !== cat);
-  if (state.selectedCat === cat) {
-    state.selectedCat = state.categories[0] || null;
-  }
-  save();
-  renderCategories();
-}
-
-function addExpense() {
-  const nameEl = document.getElementById('expName');
-  const amtEl = document.getElementById('expAmount');
-  const name = nameEl.value.trim();
-  const amount = parseFloat(amtEl.value);
-
-  if (!name) { nameEl.focus(); return; }
-  if (isNaN(amount) || amount <= 0) { amtEl.focus(); return; }
-
-  state.expenses.push({
-    name,
-    amount,
-    category: state.selectedCat || '—',
-    ts: Date.now(),
-  });
-
-  nameEl.value = '';
-  amtEl.value = '';
-  nameEl.focus();
-
-  save();
-  renderExpenses();
-  renderTotal();
+  } catch (e) { console.warn(e); }
 }
 
 // ===== Утилиты =====
@@ -523,23 +346,240 @@ function escapeHtml(s) {
   }[c]));
 }
 
+const fmt = n => new Intl.NumberFormat('ru-RU', {
+  style: 'currency', currency: 'RUB', maximumFractionDigits: 0
+}).format(Math.round(n));
+
+const MONTHS_SHORT = ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
+const MONTHS_FULL = ['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];
+
+function formatDeadline(deadline) {
+  if (!deadline) return '';
+  const [y, m] = deadline.split('-').map(Number);
+  return `${MONTHS_SHORT[m-1]} ${y}`;
+}
+
+// Разница в месяцах от текущего до дедлайна (включительно)
+// 0 = этот месяц, 1 = следующий, -1 = прошлый месяц
+function monthsUntil(deadline) {
+  if (!deadline) return 0;
+  const [y, m] = deadline.split('-').map(Number);
+  const now = new Date();
+  return (y * 12 + (m - 1)) - (now.getFullYear() * 12 + now.getMonth());
+}
+
+// ===== Расчёт цели =====
+function calcGoal(g) {
+  const remaining = Math.max(0, g.target - g.saved);
+  const diff = monthsUntil(g.deadline);
+  const months = Math.max(1, diff + 1); // включая текущий месяц
+  const perMonth = remaining > 0 ? remaining / months : 0;
+  const overdue = diff < 0 && remaining > 0;
+  const done = remaining === 0;
+  const percent = g.target > 0 ? Math.min(100, (g.saved / g.target) * 100) : 0;
+  return { remaining, diff, months, perMonth, overdue, done, percent };
+}
+
+// ===== Рендер: ежемесячные расходы =====
+function renderExpenses() {
+  const el = document.getElementById('expenseList');
+  if (!state.expenses.length) {
+    el.innerHTML = '<span class="empty-hint">Пока пусто — добавь аренду, подписки, продукты</span>';
+    return;
+  }
+  el.innerHTML = state.expenses.map(e => `
+    <div class="expense-row">
+      <span class="name">${escapeHtml(e.name)}</span>
+      <span style="display:flex;align-items:center">
+        <span class="amt">${fmt(e.amount)}</span>
+        <button class="del" data-id="${e.id}" title="Удалить">×</button>
+      </span>
+    </div>
+  `).join('');
+  el.querySelectorAll('.del').forEach(btn => {
+    btn.onclick = () => {
+      state.expenses = state.expenses.filter(x => x.id !== btn.dataset.id);
+      save(); renderExpenses(); renderTotal();
+    };
+  });
+}
+
+// ===== Рендер: цели =====
+function renderGoals() {
+  const el = document.getElementById('goalList');
+  if (!state.goals.length) {
+    el.innerHTML = '<span class="empty-hint">Целей пока нет. Нажми «+ Добавить цель»</span>';
+    return;
+  }
+
+  el.innerHTML = state.goals.map(g => {
+    const c = calcGoal(g);
+    let fillClass = '';
+    if (c.done) fillClass = 'done';
+    else if (c.overdue) fillClass = 'overdue';
+
+    let monthlyHtml;
+    if (c.done) {
+      monthlyHtml = `<span class="goal-monthly done">✓ Готово</span>`;
+    } else if (c.overdue) {
+      monthlyHtml = `<span class="goal-monthly overdue">⚠️ Просрочено на ${fmt(c.remaining)}</span>`;
+    } else {
+      const words = c.months === 1 ? 'месяц' : (c.months < 5 ? 'месяца' : 'месяцев');
+      monthlyHtml = `<span class="goal-monthly">${fmt(c.perMonth)}/мес <span style="color:var(--muted);font-weight:400">· ${c.months} ${words}</span></span>`;
+    }
+
+    return `
+      <div class="goal-card">
+        <div class="goal-head">
+          <div style="min-width:0">
+            <div class="goal-name">${escapeHtml(g.name)}</div>
+            <div class="goal-meta">К ${formatDeadline(g.deadline)}</div>
+          </div>
+          <button class="del" data-id="${g.id}" title="Удалить">×</button>
+        </div>
+
+        <div class="progress-bar">
+          <div class="progress-fill ${fillClass}" style="width:${c.percent}%"></div>
+        </div>
+
+        <div class="goal-stats">
+          <span class="goal-saved">${fmt(g.saved)} из ${fmt(g.target)} · ${Math.round(c.percent)}%</span>
+          ${monthlyHtml}
+        </div>
+
+        <div class="saved-edit">
+          <label>Уже отложено:</label>
+          <input type="number" min="0" step="1000" value="${g.saved}" data-saved-id="${g.id}">
+          <span style="color:var(--muted)">₽</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Удаление
+  el.querySelectorAll('.del').forEach(btn => {
+    btn.onclick = () => {
+      state.goals = state.goals.filter(x => x.id !== btn.dataset.id);
+      save(); renderGoals(); renderTotal();
+    };
+  });
+
+  // Редактирование saved
+  el.querySelectorAll('input[data-saved-id]').forEach(inp => {
+    inp.addEventListener('change', () => {
+      const g = state.goals.find(x => x.id === inp.dataset.savedId);
+      if (!g) return;
+      g.saved = Math.max(0, Number(inp.value) || 0);
+      save(); renderGoals(); renderTotal();
+    });
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Enter') inp.blur();
+    });
+  });
+}
+
+// ===== Рендер: итог =====
+function renderTotal() {
+  const salary = Number(state.salary) || 0;
+  const expTotal = state.expenses.reduce((s, e) => s + Number(e.amount || 0), 0);
+  const goalsTotal = state.goals.reduce((s, g) => s + calcGoal(g).perMonth, 0);
+  const free = salary - expTotal - goalsTotal;
+
+  document.getElementById('tSalary').textContent = fmt(salary);
+  document.getElementById('tExpenses').textContent = '−' + fmt(expTotal);
+  document.getElementById('tGoals').textContent = '−' + fmt(goalsTotal);
+
+  const freeEl = document.getElementById('tFree');
+  freeEl.textContent = fmt(free);
+  freeEl.classList.toggle('negative', free < 0);
+}
+
+// ===== Действия =====
+function addExpense() {
+  const nameEl = document.getElementById('expName');
+  const amtEl = document.getElementById('expAmount');
+  const name = nameEl.value.trim();
+  const amount = parseFloat(amtEl.value);
+  if (!name) { nameEl.focus(); return; }
+  if (isNaN(amount) || amount < 0) { amtEl.focus(); return; }
+
+  state.expenses.push({ id: uid(), name, amount });
+  nameEl.value = '';
+  amtEl.value = '';
+  nameEl.focus();
+  save(); renderExpenses(); renderTotal();
+}
+
+function openGoalForm() {
+  const form = document.getElementById('goalForm');
+  form.classList.add('open');
+  // Дефолтный дедлайн — конец текущего года
+  if (!document.getElementById('goalDeadline').value) {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    document.getElementById('goalDeadline').value = `${y}-12`;
+  }
+  document.getElementById('goalName').focus();
+}
+
+function closeGoalForm() {
+  document.getElementById('goalForm').classList.remove('open');
+  ['goalName','goalTarget','goalSaved'].forEach(id => {
+    document.getElementById(id).value = id === 'goalSaved' ? '0' : '';
+  });
+}
+
+function saveGoal() {
+  const name = document.getElementById('goalName').value.trim();
+  const target = parseFloat(document.getElementById('goalTarget').value);
+  const saved = parseFloat(document.getElementById('goalSaved').value) || 0;
+  const deadline = document.getElementById('goalDeadline').value;
+
+  if (!name) { document.getElementById('goalName').focus(); return; }
+  if (isNaN(target) || target <= 0) { document.getElementById('goalTarget').focus(); return; }
+  if (!deadline) { document.getElementById('goalDeadline').focus(); return; }
+
+  state.goals.push({
+    id: uid(),
+    name,
+    target,
+    saved: Math.max(0, saved),
+    deadline,
+  });
+
+  save(); closeGoalForm(); renderGoals(); renderTotal();
+}
+
 // ===== Инициализация =====
 load();
-renderCategories();
+
+document.getElementById('salary').value = state.salary || '';
+
 renderExpenses();
+renderGoals();
 renderTotal();
 
-document.getElementById('addCatBtn').onclick = addCategory;
-document.getElementById('newCat').addEventListener('keydown', e => {
-  if (e.key === 'Enter') addCategory();
+document.getElementById('salary').addEventListener('input', e => {
+  state.salary = parseFloat(e.target.value) || 0;
+  save(); renderTotal();
 });
+
 document.getElementById('addExpBtn').onclick = addExpense;
-document.getElementById('expAmount').addEventListener('keydown', e => {
-  if (e.key === 'Enter') addExpense();
-});
 document.getElementById('expName').addEventListener('keydown', e => {
   if (e.key === 'Enter') document.getElementById('expAmount').focus();
 });
+document.getElementById('expAmount').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addExpense();
+});
+
+document.getElementById('toggleGoalForm').onclick = () => {
+  const form = document.getElementById('goalForm');
+  if (form.classList.contains('open')) closeGoalForm();
+  else openGoalForm();
+};
+document.getElementById('cancelGoalBtn').onclick = closeGoalForm;
+document.getElementById('saveGoalBtn').onclick = saveGoal;
 </script>
 </body>
 </html>
