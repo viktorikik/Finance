@@ -2,7 +2,16 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+<!-- PWA meta -->
+<meta name="theme-color" content="#0f1117">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Финансы">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="application-name" content="Финансы">
+
 <title>Планировщик финансов</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -25,11 +34,16 @@
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background: var(--bg); color: var(--text);
-    min-height: 100vh; padding: 24px 16px 240px;
+    min-height: 100vh;
+    padding-top: max(24px, env(safe-area-inset-top));
+    padding-right: max(16px, env(safe-area-inset-right));
+    padding-bottom: max(240px, calc(env(safe-area-inset-bottom) + 240px));
+    padding-left: max(16px, env(safe-area-inset-left));
     background-image:
       radial-gradient(circle at 10% 0%, rgba(124,92,255,0.15), transparent 40%),
       radial-gradient(circle at 90% 100%, rgba(61,220,151,0.08), transparent 40%);
     background-attachment: fixed;
+    -webkit-tap-highlight-color: transparent;
   }
 
   .container { max-width: 680px; margin: 0 auto; }
@@ -85,6 +99,7 @@
     border-radius: 10px; color: var(--text); font-size: 15px;
     padding: 11px 13px; outline: none; font-family: inherit; width: 100%;
     transition: border-color 0.2s, box-shadow 0.2s;
+    font-size: 16px; /* prevent iOS zoom */
   }
   input:focus, select:focus {
     border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124,92,255,0.15);
@@ -178,7 +193,7 @@
     border-radius: 4px; margin-left: 6px;
   }
 
-  /* =============== SWIPE =============== */
+  /* SWIPE */
   .goal-hint {
     color: var(--muted);
     font-size: 12px;
@@ -616,7 +631,7 @@
   }
   .custom-period input { flex: 1; }
 
-  /* =============== МОДАЛКА =============== */
+  /* МОДАЛКА */
   .modal-overlay {
     position: fixed; inset: 0;
     background: rgba(0,0,0,0.65);
@@ -719,8 +734,50 @@
     background: var(--card-2);
   }
 
+  /* INSTALL PWA BUTTON */
+  .install-pwa-btn {
+    position: fixed;
+    top: max(16px, env(safe-area-inset-top));
+    right: max(16px, env(safe-area-inset-right));
+    z-index: 250;
+    background: linear-gradient(135deg, #7c5cff, #3ddc97);
+    color: #fff;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 24px;
+    font-weight: 700;
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(124,92,255,0.4);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    animation: slideDown 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .install-pwa-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(124,92,255,0.55);
+  }
+  .install-pwa-btn:active { transform: translateY(0); }
+  .install-pwa-btn .icon { font-size: 15px; line-height: 1; }
+
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (max-width: 400px) {
+    .install-pwa-btn { font-size: 12px; padding: 9px 14px; }
+    .install-pwa-btn .label-full { display: none; }
+  }
+
+  /* ИТОГ */
   .total-bar {
-    position: fixed; left: 50%; transform: translateX(-50%); bottom: 16px;
+    position: fixed; left: 50%; transform: translateX(-50%);
+    bottom: max(16px, env(safe-area-inset-bottom));
     width: calc(100% - 32px); max-width: 680px;
     background: linear-gradient(135deg, #1e2230 0%, #1a1d27 100%);
     border: 1px solid var(--border); border-radius: 16px;
@@ -797,6 +854,13 @@
 </style>
 </head>
 <body>
+
+<!-- Кнопка установки PWA -->
+<button class="install-pwa-btn" id="installPwaBtn" style="display:none" title="Установить как приложение">
+  <span class="icon">📲</span>
+  <span class="label-full">Установить</span>
+</button>
+
 <div class="container">
 
   <header>
@@ -924,7 +988,6 @@
   </div>
 </div>
 
-<!-- Модалка цели -->
 <div class="modal-overlay" id="goalModal" style="display:none">
   <div class="modal">
     <div class="modal-header">
@@ -1130,14 +1193,6 @@ function goalSaved(g) {
   return (g.contributions || []).reduce((s, c) => s + Number(c.amount || 0), 0);
 }
 
-/**
- * Расчёт месячного взноса с учётом:
- * - сложного процента (rate)
- * - индексации взноса (indexRate) — взнос растёт ежегодно
- *
- * Формула: PMT = (target - saved·(1+r)^n) / FV_unit
- * где FV_unit — будущая стоимость единичных взносов, растущих с индексацией.
- */
 function goalMonthly(g, saved, months, target) {
   const remaining = Math.max(0, target - saved);
   if (remaining <= 0 || months <= 0) return 0;
@@ -1152,14 +1207,10 @@ function goalMonthly(g, saved, months, target) {
   const r = rateAnnual / 100 / 12;
   const i = indexAnnual / 100;
 
-  // Будущая стоимость уже отложенного (растёт по ставке)
   const fvSaved = saved * Math.pow(1 + r, months);
   const need = target - fvSaved;
   if (need <= 0) return 0;
 
-  // Будущая стоимость единичных взносов с индексацией
-  // Взнос на месяц m равен (1+i)^floor(m/12)
-  // Растёт с процентами за (months-1-m) месяцев
   let fvUnit = 0;
   for (let m = 0; m < months; m++) {
     const yearIdx = Math.floor(m / 12);
@@ -1184,7 +1235,6 @@ function calcGoal(g) {
   const rateAnnual = Number(g.rate) || 0;
   const indexAnnual = Number(g.indexRate) || 0;
 
-  // Разбивка взноса по годам (только если включена индексация)
   const yearsCount = Math.max(1, Math.ceil(months / 12));
   const yearBreakdown = [];
   if (indexAnnual > 0 && perMonth > 0) {
@@ -1207,7 +1257,6 @@ function calcGoal(g) {
       const fv = saved * Math.pow(1 + r, months);
       interestEarned = Math.max(0, fv - saved);
     } else {
-      // Сумма всех номинальных взносов (с учётом индексации)
       let nominalContrib = 0;
       for (let m = 0; m < months; m++) {
         nominalContrib += perMonth * Math.pow(1 + indexAnnual / 100, Math.floor(m / 12));
@@ -1241,10 +1290,6 @@ function totalOneTimeThisMonth() {
     .filter(i => (i.date || '').slice(0, 7) === ym)
     .reduce((s, i) => s + Number(i.amount || 0), 0);
 }
-
-/* ============================================================
-   РЕНДЕР СПИСКОВ
-   ============================================================ */
 
 function renderMonthlyIncomes() {
   const el = document.getElementById('monthlyIncomeList');
@@ -1418,7 +1463,6 @@ function renderGoals() {
     else if (c.overdue) fillClass = 'overdue';
     else if (c.growthCovers) fillClass = 'growth';
 
-    // Основной месячный взнос
     let monthlyHtml;
     if (c.done) {
       monthlyHtml = `<span class="goal-monthly done">✓ Готово</span>`;
@@ -1585,10 +1629,6 @@ function renderGoals() {
   });
 }
 
-/* ============================================================
-   SWIPE-TO-DELETE
-   ============================================================ */
-
 let swipeState = null;
 
 function attachSwipe(card) {
@@ -1679,10 +1719,6 @@ document.addEventListener('pointerdown', e => {
   closeAllSwipes();
 }, true);
 
-/* ============================================================
-   УДАЛЕНИЕ ЦЕЛИ С UNDO
-   ============================================================ */
-
 function deleteGoal(goalId) {
   const idx = state.goals.findIndex(x => x.id === goalId);
   if (idx === -1) return;
@@ -1701,10 +1737,6 @@ function deleteGoal(goalId) {
     },
   });
 }
-
-/* ============================================================
-   МОДАЛКА ЦЕЛИ
-   ============================================================ */
 
 function openGoalModal(mode, goalId) {
   goalModalMode = mode;
@@ -1808,10 +1840,6 @@ function setModalDeadlineOffset(months) {
     `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
-/* ============================================================
-   ИТОГ
-   ============================================================ */
-
 function renderTotal() {
   const income = totalMonthlyIncome();
   const baseExp = totalBaseExpenses();
@@ -1836,10 +1864,6 @@ function renderTotal() {
   freeEl.textContent = fmt(free);
   freeEl.classList.toggle('negative', free < 0);
 }
-
-/* ============================================================
-   КАЛЕНДАРЬ
-   ============================================================ */
 
 function renderCalendar() {
   const el = document.getElementById('calendarContent');
@@ -1869,7 +1893,6 @@ function renderCalendar() {
   const rows = [];
   let peak = { month: startMonth, total: 0 };
 
-  // Для каждой цели вычисляем взнос в конкретный месяц с учётом индексации
   const contribAtMonth = (gd, monthIdx) => {
     const c = gd.calc;
     if (!c.perMonth) return 0;
@@ -1933,10 +1956,6 @@ function renderCalendar() {
 
   el.innerHTML = warningBanner + summary + rowsHtml;
 }
-
-/* ============================================================
-   СТАТИСТИКА
-   ============================================================ */
 
 function getPeriodRange() {
   const mode = document.getElementById('periodSelect').value;
@@ -2385,10 +2404,6 @@ function renderStats() {
   el.innerHTML = html;
 }
 
-/* ============================================================
-   ДЕЙСТВИЯ СПИСКОВ
-   ============================================================ */
-
 function addMonthlyIncome() {
   const nameEl = document.getElementById('miName');
   const amtEl = document.getElementById('miAmount');
@@ -2430,10 +2445,6 @@ function addExpense() {
   nameEl.value = ''; amtEl.value = ''; nameEl.focus();
   save(); renderExpenses(); renderTotal(); renderCalendar(); renderStats();
 }
-
-/* ============================================================
-   ЭКСПОРТ / ИМПОРТ
-   ============================================================ */
 
 function download(filename, content, type) {
   const blob = new Blob([content], { type });
@@ -2629,10 +2640,6 @@ function importJSON(file) {
   reader.readAsText(file);
 }
 
-/* ============================================================
-   TOAST / TABS / INIT
-   ============================================================ */
-
 let toastTimer;
 function showToast(msg, isError, action) {
   const el = document.getElementById('toast');
@@ -2780,6 +2787,142 @@ document.getElementById('importFile').addEventListener('change', e => {
 document.querySelectorAll('.tab').forEach(t => {
   t.onclick = () => switchTab(t.dataset.tab);
 });
+
+/* ============================================================
+   PWA — Манифест, иконки, Service Worker, установка
+   ============================================================ */
+
+// SVG-иконка приложения — рисуется кодом, не требует внешних файлов
+const ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#7c5cff"/>
+      <stop offset="100%" stop-color="#3ddc97"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <text x="256" y="256" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif"
+        font-size="300" font-weight="700" text-anchor="middle" dominant-baseline="central"
+        fill="#ffffff">₽</text>
+</svg>`;
+
+const ICON_DATA_URI = 'data:image/svg+xml;base64,' +
+  btoa(unescape(encodeURIComponent(ICON_SVG)));
+
+// Инжектим manifest как data URI — работает в Chrome/Edge/Brave/Opera без отдельного файла
+(function injectManifest() {
+  const manifest = {
+    name: 'Планировщик финансов',
+    short_name: 'Финансы',
+    description: 'Планирование личного бюджета: доходы, расходы, долгосрочные цели',
+    start_url: '.',
+    scope: '.',
+    display: 'standalone',
+    orientation: 'portrait',
+    background_color: '#0f1117',
+    theme_color: '#0f1117',
+    lang: 'ru',
+    dir: 'ltr',
+    icons: [
+      { src: ICON_DATA_URI, sizes: '192x192', type: 'image/svg+xml', purpose: 'any' },
+      { src: ICON_DATA_URI, sizes: '512x512', type: 'image/svg+xml', purpose: 'any' },
+      { src: ICON_DATA_URI, sizes: '512x512', type: 'image/svg+xml', purpose: 'maskable' }
+    ]
+  };
+
+  const json = JSON.stringify(manifest);
+  const manifestUri = 'data:application/manifest+json;charset=utf-8,' +
+    encodeURIComponent(json);
+
+  const link = document.createElement('link');
+  link.rel = 'manifest';
+  link.href = manifestUri;
+  document.head.appendChild(link);
+
+  // Apple touch icon — iOS требует PNG, но SVG тоже работает на современных версиях
+  const appleIcon = document.createElement('link');
+  appleIcon.rel = 'apple-touch-icon';
+  appleIcon.href = ICON_DATA_URI;
+  document.head.appendChild(appleIcon);
+
+  // Favicon
+  const favicon = document.createElement('link');
+  favicon.rel = 'icon';
+  favicon.type = 'image/svg+xml';
+  favicon.href = ICON_DATA_URI;
+  document.head.appendChild(favicon);
+})();
+
+// Проверка: уже установлено как PWA?
+function isStandalone() {
+  return window.matchMedia('(display-mode: standalone)').matches ||
+         window.matchMedia('(display-mode: fullscreen)').matches ||
+         window.navigator.standalone === true;
+}
+
+// Регистрация Service Worker (работает только на http(s), не на file://)
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js', { scope: './' })
+      .then(reg => console.log('[PWA] SW зарегистрирован:', reg.scope))
+      .catch(err => console.warn('[PWA] SW не зарегистрирован:', err.message));
+  });
+}
+
+// Install prompt
+let deferredInstallPrompt = null;
+const installBtn = document.getElementById('installPwaBtn');
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  if (!isStandalone()) {
+    installBtn.style.display = 'flex';
+  }
+});
+
+installBtn.addEventListener('click', async () => {
+  if (!deferredInstallPrompt) return;
+  installBtn.style.display = 'none';
+  deferredInstallPrompt.prompt();
+  try {
+    const { outcome } = await deferredInstallPrompt.userChoice;
+    console.log('[PWA] Install outcome:', outcome);
+  } catch (e) { console.warn(e); }
+  deferredInstallPrompt = null;
+});
+
+window.addEventListener('appinstalled', () => {
+  installBtn.style.display = 'none';
+  deferredInstallPrompt = null;
+  showToast('Приложение установлено 🎉');
+});
+
+// Если уже установлено — кнопку не показываем
+if (isStandalone()) {
+  installBtn.style.display = 'none';
+}
+
+// iOS Safari не поддерживает beforeinstallprompt — показываем подсказку один раз
+(function iosInstallHint() {
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+  if (isIOS && isSafari && !isStandalone()) {
+    const dismissed = localStorage.getItem('ios_install_hint_dismissed');
+    if (dismissed) return;
+
+    // Показываем через 3 секунды, чтобы не мешать первому впечатлению
+    setTimeout(() => {
+      showToast('📲 Установи на iPhone: Поделиться → На экран «Домой»', false, {
+        label: 'Понятно',
+        onClick: () => {
+          localStorage.setItem('ios_install_hint_dismissed', '1');
+        }
+      });
+    }, 3000);
+  }
+})();
 </script>
 </body>
 </html>
