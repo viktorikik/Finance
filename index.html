@@ -84,7 +84,27 @@
     font-size: 13px; font-weight: 600; text-transform: uppercase;
     letter-spacing: 0.8px; color: var(--muted); margin-bottom: 14px;
     display: flex; justify-content: space-between; align-items: center;
+    gap: 8px;
   }
+  .card-title-text { flex: 1; min-width: 0; }
+  .card-title-actions { display: flex; gap: 4px; align-items: center; flex-shrink: 0; }
+
+  .collapse-btn {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    font-size: 14px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    line-height: 1;
+    transition: transform 0.2s, background 0.15s, color 0.15s;
+    font-family: inherit;
+  }
+  .collapse-btn:hover { color: var(--text); background: rgba(124,92,255,0.12); }
+  .card.collapsed .collapse-btn { transform: rotate(-90deg); }
+  .card.collapsed .card-body { display: none; }
+  .card.collapsed .card-title { margin-bottom: 0; }
 
   .card-title button.toggle {
     background: transparent; border: none; color: var(--accent);
@@ -191,6 +211,17 @@
     letter-spacing: 0.5px; color: var(--accent);
     background: rgba(124,92,255,0.15); padding: 2px 6px;
     border-radius: 4px; margin-left: 6px;
+  }
+
+  .item-row.auto.short {
+    background: rgba(255,200,87,0.06);
+    border-color: rgba(255,200,87,0.2);
+    border-left-color: var(--yellow);
+  }
+  .item-row.auto.short .name { color: #f0d090; }
+  .item-row.auto.short .auto-badge {
+    background: rgba(255,200,87,0.15);
+    color: var(--yellow);
   }
 
   /* SWIPE */
@@ -876,60 +907,105 @@
 
   <div id="tab-plan" class="tab-content">
 
-    <section class="card">
-      <div class="card-title">Месячный доход</div>
-      <div id="monthlyIncomeList"></div>
-      <div class="row" style="margin-top:12px">
-        <input type="text" id="miName" placeholder="Зарплата, проценты с вклада, аренда...">
-        <input type="number" class="amt" id="miAmount" placeholder="₽" min="0" step="1000">
-        <button class="btn" id="addMiBtn">+</button>
-      </div>
-    </section>
-
-    <section class="card">
-      <div class="card-title">Разовый доход</div>
-      <div id="oneTimeIncomeList"></div>
-      <div class="row" style="margin-top:12px;flex-wrap:wrap">
-        <input type="text" id="oiName" placeholder="Премия, продал что-то...">
-        <input type="number" class="amt" id="oiAmount" placeholder="₽" min="0" step="1000">
-        <input type="date" id="oiDate" style="max-width:150px">
-        <button class="btn" id="addOiBtn">+</button>
-      </div>
-    </section>
-
-    <section class="card">
-      <div class="card-title">Ежемесячные расходы</div>
-      <div id="expenseList"></div>
-      <div class="row" style="margin-top:12px">
-        <input type="text" id="expName" placeholder="Аренда, подписки, еда...">
-        <input type="number" class="amt" id="expAmount" placeholder="₽" min="0" step="100">
-        <button class="btn" id="addExpBtn">+</button>
-      </div>
-    </section>
-
-    <section class="card">
+    <section class="card collapsible" data-collapse-id="monthly-income">
       <div class="card-title">
-        Долгосрочные цели
-        <button class="toggle" id="toggleGoalForm">+ Добавить цель</button>
+        <span class="card-title-text">Месячный доход</span>
+        <div class="card-title-actions">
+          <button class="collapse-btn" data-collapse-toggle aria-label="Свернуть раздел">▾</button>
+        </div>
       </div>
-
-      <div class="goal-hint" id="goalHint">💡 Свайп влево — удалить · Тап по карточке — редактировать</div>
-
-      <div id="goalList"></div>
+      <div class="card-body">
+        <div id="monthlyIncomeList"></div>
+        <div class="row" style="margin-top:12px">
+          <input type="text" id="miName" placeholder="Зарплата, проценты с вклада, аренда...">
+          <input type="number" class="amt" id="miAmount" placeholder="₽" min="0" step="1000">
+          <button class="btn" id="addMiBtn">+</button>
+        </div>
+      </div>
     </section>
 
-    <section class="card">
-      <div class="card-title">Экспорт / Импорт</div>
-      <div class="export-grid">
-        <button class="btn" id="exportCsvBtn">📊 CSV</button>
-        <button class="btn btn-secondary" id="exportJsonBtn">💾 Бэкап</button>
-        <button class="btn btn-secondary" id="importJsonBtn">📥 Импорт</button>
+    <section class="card collapsible" data-collapse-id="one-time-income">
+      <div class="card-title">
+        <span class="card-title-text">Разовый доход</span>
+        <div class="card-title-actions">
+          <button class="collapse-btn" data-collapse-toggle aria-label="Свернуть раздел">▾</button>
+        </div>
       </div>
-      <input type="file" id="importFile" accept=".json,application/json" style="display:none">
-      <p class="export-desc">
-        <strong>CSV</strong> — таблица для Excel. <strong>Бэкап</strong> — резервная копия (JSON).
-        <strong>Импорт</strong> — восстановить из бэкапа (перезапишет текущие данные).
-      </p>
+      <div class="card-body">
+        <div id="oneTimeIncomeList"></div>
+        <div class="row" style="margin-top:12px;flex-wrap:wrap">
+          <input type="text" id="oiName" placeholder="Премия, продал что-то...">
+          <input type="number" class="amt" id="oiAmount" placeholder="₽" min="0" step="1000">
+          <input type="date" id="oiDate" style="max-width:150px">
+          <button class="btn" id="addOiBtn">+</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card collapsible" data-collapse-id="expenses">
+      <div class="card-title">
+        <span class="card-title-text">Ежемесячные расходы</span>
+        <div class="card-title-actions">
+          <button class="collapse-btn" data-collapse-toggle aria-label="Свернуть раздел">▾</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div id="expenseList"></div>
+        <div class="row" style="margin-top:12px">
+          <input type="text" id="expName" placeholder="Аренда, подписки, еда...">
+          <input type="number" class="amt" id="expAmount" placeholder="₽" min="0" step="100">
+          <button class="btn" id="addExpBtn">+</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card collapsible" data-collapse-id="long-goals">
+      <div class="card-title">
+        <span class="card-title-text">Долгосрочные цели</span>
+        <div class="card-title-actions">
+          <button class="toggle" id="toggleGoalForm">+ Добавить цель</button>
+          <button class="collapse-btn" data-collapse-toggle aria-label="Свернуть раздел">▾</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="goal-hint" id="goalHint">💡 Свайп влево — удалить · Тап по карточке — редактировать</div>
+        <div id="goalList"></div>
+      </div>
+    </section>
+
+    <section class="card collapsible" data-collapse-id="short-goals">
+      <div class="card-title">
+        <span class="card-title-text">Краткосрочные цели</span>
+        <div class="card-title-actions">
+          <button class="toggle" id="toggleShortGoalForm">+ Добавить цель</button>
+          <button class="collapse-btn" data-collapse-toggle aria-label="Свернуть раздел">▾</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="goal-hint" id="shortGoalHint">💡 Свайп влево — удалить · Тап по карточке — редактировать</div>
+        <div id="shortGoalList"></div>
+      </div>
+    </section>
+
+    <section class="card collapsible" data-collapse-id="export-import">
+      <div class="card-title">
+        <span class="card-title-text">Экспорт / Импорт</span>
+        <div class="card-title-actions">
+          <button class="collapse-btn" data-collapse-toggle aria-label="Свернуть раздел">▾</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="export-grid">
+          <button class="btn" id="exportCsvBtn">📊 CSV</button>
+          <button class="btn btn-secondary" id="exportJsonBtn">💾 Бэкап</button>
+          <button class="btn btn-secondary" id="importJsonBtn">📥 Импорт</button>
+        </div>
+        <input type="file" id="importFile" accept=".json,application/json" style="display:none">
+        <p class="export-desc">
+          <strong>CSV</strong> — таблица для Excel. <strong>Бэкап</strong> — резервная копия (JSON).
+          <strong>Импорт</strong> — восстановить из бэкапа (перезапишет текущие данные).
+        </p>
+      </div>
     </section>
 
   </div>
@@ -1013,6 +1089,9 @@
         <label for="mGoalDeadline">Срок достижения</label>
         <input type="month" id="mGoalDeadline">
         <div class="quick-dates" id="mGoalQuickDates">
+          <button type="button" data-add-months="1">+1 мес</button>
+          <button type="button" data-add-months="3">+3 мес</button>
+          <button type="button" data-add-months="6">+6 мес</button>
           <button type="button" data-add-months="12">+1 год</button>
           <button type="button" data-add-months="24">+2 года</button>
           <button type="button" data-add-months="36">+3 года</button>
@@ -1061,6 +1140,7 @@
 
 <script>
 const STORAGE_KEY = 'year_planner_v1';
+const UI_STORAGE_KEY = 'year_planner_ui_v1';
 
 const PALETTE = [
   '#7c5cff', '#3ddc97', '#5cc8ff', '#ffc857',
@@ -1073,10 +1153,12 @@ let state = {
   oneTimeIncomes: [],
   expenses: [],
   goals: [],
+  shortGoals: [],
 };
 
 let goalModalMode = 'add';
 let goalModalEditId = null;
+let goalModalType = 'long'; // 'long' | 'short'
 
 const uid = () => Math.random().toString(36).slice(2, 9);
 
@@ -1088,6 +1170,22 @@ function todayStr() {
 function currentMonthKey() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function normalizeGoal(g) {
+  let contributions = Array.isArray(g.contributions) ? g.contributions : null;
+  if (!contributions) {
+    contributions = [];
+    const savedNum = Number(g.saved) || 0;
+    if (savedNum > 0) contributions.push({ id: uid(), date: todayStr(), amount: savedNum });
+  }
+  const { saved, ...rest } = g;
+  return {
+    ...rest,
+    contributions,
+    rate: Number(g.rate) || 0,
+    indexRate: Number(g.indexRate) || 0,
+  };
 }
 
 function save() {
@@ -1110,22 +1208,10 @@ function load() {
   if (!Array.isArray(state.oneTimeIncomes)) state.oneTimeIncomes = [];
   if (!Array.isArray(state.expenses)) state.expenses = [];
   if (!Array.isArray(state.goals)) state.goals = [];
+  if (!Array.isArray(state.shortGoals)) state.shortGoals = [];
 
-  state.goals = state.goals.map(g => {
-    let contributions = Array.isArray(g.contributions) ? g.contributions : null;
-    if (!contributions) {
-      contributions = [];
-      const savedNum = Number(g.saved) || 0;
-      if (savedNum > 0) contributions.push({ id: uid(), date: todayStr(), amount: savedNum });
-    }
-    const { saved, ...rest } = g;
-    return {
-      ...rest,
-      contributions,
-      rate: Number(g.rate) || 0,
-      indexRate: Number(g.indexRate) || 0,
-    };
-  });
+  state.goals = state.goals.map(normalizeGoal);
+  state.shortGoals = state.shortGoals.map(normalizeGoal);
 }
 
 function escapeHtml(s) {
@@ -1272,6 +1358,16 @@ function calcGoal(g) {
   };
 }
 
+/* ---------- Агрегаты и helpers ---------- */
+
+function allGoals() {
+  return [...state.goals, ...state.shortGoals];
+}
+
+function findGoalById(id) {
+  return state.goals.find(g => g.id === id) || state.shortGoals.find(g => g.id === id) || null;
+}
+
 function totalMonthlyIncome() {
   return state.monthlyIncomes.reduce((s, i) => s + Number(i.amount || 0), 0);
 }
@@ -1280,8 +1376,16 @@ function totalBaseExpenses() {
   return state.expenses.reduce((s, e) => s + Number(e.amount || 0), 0);
 }
 
-function totalGoalsPerMonth() {
+function totalLongGoalsPerMonth() {
   return state.goals.reduce((s, g) => s + calcGoal(g).perMonth, 0);
+}
+
+function totalShortGoalsPerMonth() {
+  return state.shortGoals.reduce((s, g) => s + calcGoal(g).perMonth, 0);
+}
+
+function totalGoalsPerMonth() {
+  return totalLongGoalsPerMonth() + totalShortGoalsPerMonth();
 }
 
 function totalOneTimeThisMonth() {
@@ -1290,6 +1394,8 @@ function totalOneTimeThisMonth() {
     .filter(i => (i.date || '').slice(0, 7) === ym)
     .reduce((s, i) => s + Number(i.amount || 0), 0);
 }
+
+/* ---------- Рендеры: доходы и расходы ---------- */
 
 function renderMonthlyIncomes() {
   const el = document.getElementById('monthlyIncomeList');
@@ -1358,9 +1464,25 @@ function renderOneTimeIncomes() {
   });
 }
 
+function autoRowHtml(name, sub, amount, kind) {
+  return `
+    <div class="item-row auto ${kind}" style="margin-top:12px">
+      <div class="info">
+        <div class="name">${name}<span class="auto-badge">авто</span></div>
+        <div class="sub">${sub}</div>
+      </div>
+      <div class="right">
+        <span class="amt">−${fmt(amount)}</span>
+      </div>
+    </div>
+  `;
+}
+
 function renderExpenses() {
   const el = document.getElementById('expenseList');
-  const goalsPerMonth = totalGoalsPerMonth();
+  const longPerMonth = totalLongGoalsPerMonth();
+  const shortPerMonth = totalShortGoalsPerMonth();
+  const goalsPerMonth = longPerMonth + shortPerMonth;
   const baseTotal = totalBaseExpenses();
   const grandTotal = baseTotal + goalsPerMonth;
 
@@ -1381,18 +1503,21 @@ function renderExpenses() {
     `).join('');
   }
 
-  if (goalsPerMonth > 0) {
-    html += `
-      <div class="item-row auto" style="margin-top:12px">
-        <div class="info">
-          <div class="name">🎯 Накопления на цели<span class="auto-badge">авто</span></div>
-          <div class="sub">Из секции «Долгосрочные цели»</div>
-        </div>
-        <div class="right">
-          <span class="amt">−${fmt(goalsPerMonth)}</span>
-        </div>
-      </div>
-    `;
+  if (longPerMonth > 0) {
+    html += autoRowHtml(
+      '🎯 Накопления на долгосрочные цели',
+      'Из секции «Долгосрочные цели»',
+      longPerMonth,
+      ''
+    );
+  }
+  if (shortPerMonth > 0) {
+    html += autoRowHtml(
+      '🎯 Накопления на краткосрочные цели',
+      'Из секции «Краткосрочные цели»',
+      shortPerMonth,
+      'short'
+    );
   }
 
   if (state.expenses.length || goalsPerMonth > 0) {
@@ -1413,6 +1538,8 @@ function renderExpenses() {
     };
   });
 }
+
+/* ---------- Рендер карточек целей (общий для long/short) ---------- */
 
 function renderContribChart(g) {
   const contribs = (g.contributions || []).slice();
@@ -1439,18 +1566,15 @@ function renderContribChart(g) {
   return `<svg class="contrib-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">${bars}</svg>`;
 }
 
-function renderGoals() {
-  const el = document.getElementById('goalList');
-  const hint = document.getElementById('goalHint');
-
-  if (!state.goals.length) {
+function renderGoalListInto(el, hint, goals) {
+  if (!goals.length) {
     el.innerHTML = '<span class="empty-hint">Целей пока нет. Нажми «+ Добавить цель»</span>';
     if (hint) hint.style.display = 'none';
     return;
   }
   if (hint) hint.style.display = '';
 
-  const sorted = [...state.goals].sort((a, b) =>
+  const sorted = [...goals].sort((a, b) =>
     (a.deadline || '').localeCompare(b.deadline || '')
   );
 
@@ -1595,10 +1719,10 @@ function renderGoals() {
 
   el.querySelectorAll('[data-contrib-id]').forEach(btn => {
     btn.onclick = () => {
-      const g = state.goals.find(x => x.id === btn.dataset.goalId);
+      const g = findGoalById(btn.dataset.goalId);
       if (!g) return;
       g.contributions = g.contributions.filter(c => c.id !== btn.dataset.contribId);
-      save(); renderGoals(); renderExpenses(); renderTotal(); renderCalendar(); renderStats();
+      save(); renderGoalsAndTotals();
     };
   });
 
@@ -1613,10 +1737,10 @@ function renderGoals() {
 
       if (isNaN(amount) || amount <= 0) { amountInput.focus(); return; }
 
-      const g = state.goals.find(x => x.id === goalId);
+      const g = findGoalById(goalId);
       if (!g) return;
       g.contributions.push({ id: uid(), date, amount });
-      save(); renderGoals(); renderExpenses(); renderTotal(); renderCalendar(); renderStats();
+      save(); renderGoalsAndTotals();
     };
   });
 
@@ -1628,6 +1752,33 @@ function renderGoals() {
     });
   });
 }
+
+function renderGoals() {
+  renderGoalListInto(
+    document.getElementById('goalList'),
+    document.getElementById('goalHint'),
+    state.goals
+  );
+}
+
+function renderShortGoals() {
+  renderGoalListInto(
+    document.getElementById('shortGoalList'),
+    document.getElementById('shortGoalHint'),
+    state.shortGoals
+  );
+}
+
+function renderGoalsAndTotals() {
+  renderGoals();
+  renderShortGoals();
+  renderExpenses();
+  renderTotal();
+  renderCalendar();
+  renderStats();
+}
+
+/* ---------- Свайпы ---------- */
 
 let swipeState = null;
 
@@ -1720,27 +1871,42 @@ document.addEventListener('pointerdown', e => {
 }, true);
 
 function deleteGoal(goalId) {
-  const idx = state.goals.findIndex(x => x.id === goalId);
-  if (idx === -1) return;
-  const [deleted] = state.goals.splice(idx, 1);
+  let arr = null;
+  let idx = state.goals.findIndex(x => x.id === goalId);
+  if (idx !== -1) {
+    arr = state.goals;
+  } else {
+    idx = state.shortGoals.findIndex(x => x.id === goalId);
+    if (idx === -1) return;
+    arr = state.shortGoals;
+  }
+
+  const [deleted] = arr.splice(idx, 1);
   save();
-  renderGoals(); renderExpenses(); renderTotal(); renderCalendar(); renderStats();
+  renderGoalsAndTotals();
 
   showToast(`Цель «${deleted.name}» удалена`, false, {
     label: 'Отменить',
     onClick: () => {
-      const insertAt = Math.min(idx, state.goals.length);
-      state.goals.splice(insertAt, 0, deleted);
+      const insertAt = Math.min(idx, arr.length);
+      arr.splice(insertAt, 0, deleted);
       save();
-      renderGoals(); renderExpenses(); renderTotal(); renderCalendar(); renderStats();
+      renderGoalsAndTotals();
       showToast('Восстановлено');
     },
   });
 }
 
-function openGoalModal(mode, goalId) {
+/* ---------- Модалка цели ---------- */
+
+function openGoalModal(mode, goalId, type) {
   goalModalMode = mode;
   goalModalEditId = goalId || null;
+  if (mode === 'add') {
+    goalModalType = type || 'long';
+  } else {
+    goalModalType = state.goals.some(g => g.id === goalId) ? 'long' : 'short';
+  }
 
   const titleEl = document.getElementById('goalModalTitle');
   const savedGroup = document.getElementById('mGoalSavedGroup');
@@ -1756,7 +1922,7 @@ function openGoalModal(mode, goalId) {
   const indexGroup = document.getElementById('mGoalIndexGroup');
 
   if (mode === 'add') {
-    titleEl.textContent = 'Новая цель';
+    titleEl.textContent = goalModalType === 'short' ? 'Новая краткосрочная цель' : 'Новая цель';
     nameEl.value = '';
     targetEl.value = '';
     savedEl.value = '0';
@@ -1771,7 +1937,7 @@ function openGoalModal(mode, goalId) {
     indexGroup.style.display = 'none';
     indexEl.value = '5';
   } else {
-    const g = state.goals.find(x => x.id === goalId);
+    const g = findGoalById(goalId);
     if (!g) return;
     titleEl.textContent = 'Редактировать цель';
     nameEl.value = g.name;
@@ -1812,13 +1978,17 @@ function saveGoalFromModal() {
   if (isNaN(target) || target <= 0) { document.getElementById('mGoalTarget').focus(); return; }
   if (!deadline) { document.getElementById('mGoalDeadline').focus(); return; }
 
-  if (goalModalMode === 'add') {
+  const wasAdd = goalModalMode === 'add';
+  const wasShort = goalModalType === 'short';
+  const targetArr = wasShort ? state.shortGoals : state.goals;
+
+  if (wasAdd) {
     const saved = parseFloat(document.getElementById('mGoalSaved').value) || 0;
     const contributions = [];
     if (saved > 0) contributions.push({ id: uid(), date: todayStr(), amount: saved });
-    state.goals.push({ id: uid(), name, target, deadline, contributions, rate, indexRate });
+    targetArr.push({ id: uid(), name, target, deadline, contributions, rate, indexRate });
   } else {
-    const g = state.goals.find(x => x.id === goalModalEditId);
+    const g = findGoalById(goalModalEditId);
     if (!g) return;
     g.name = name;
     g.target = target;
@@ -1829,8 +1999,11 @@ function saveGoalFromModal() {
 
   save();
   closeGoalModal();
-  renderGoals(); renderExpenses(); renderTotal(); renderCalendar(); renderStats();
-  showToast(goalModalMode === 'add' ? 'Цель добавлена' : 'Изменения сохранены');
+  renderGoalsAndTotals();
+  const msg = wasAdd
+    ? (wasShort ? 'Краткосрочная цель добавлена' : 'Цель добавлена')
+    : 'Изменения сохранены';
+  showToast(msg);
 }
 
 function setModalDeadlineOffset(months) {
@@ -1839,6 +2012,8 @@ function setModalDeadlineOffset(months) {
   document.getElementById('mGoalDeadline').value =
     `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
+
+/* ---------- Итоговая панель ---------- */
 
 function renderTotal() {
   const income = totalMonthlyIncome();
@@ -1865,6 +2040,8 @@ function renderTotal() {
   freeEl.classList.toggle('negative', free < 0);
 }
 
+/* ---------- Календарь ---------- */
+
 function renderCalendar() {
   const el = document.getElementById('calendarContent');
 
@@ -1872,7 +2049,7 @@ function renderCalendar() {
   const baseExp = totalBaseExpenses();
   const free = income - baseExp;
 
-  const activeGoals = state.goals.filter(g => !calcGoal(g).done);
+  const activeGoals = allGoals().filter(g => !calcGoal(g).done);
 
   if (!activeGoals.length) {
     el.innerHTML = '<div class="empty-hint">Активных целей нет — либо добавь цель, либо все уже достигнуты 🎉</div>';
@@ -1957,6 +2134,8 @@ function renderCalendar() {
   el.innerHTML = warningBanner + summary + rowsHtml;
 }
 
+/* ---------- Статистика ---------- */
+
 function getPeriodRange() {
   const mode = document.getElementById('periodSelect').value;
   const now = new Date();
@@ -1981,7 +2160,7 @@ function getPeriodRange() {
 
 function filterContribsByRange(range) {
   const result = {};
-  state.goals.forEach(g => {
+  allGoals().forEach(g => {
     (g.contributions || []).forEach(c => {
       const m = (c.date || '').slice(0, 7);
       if (!m) return;
@@ -2052,10 +2231,10 @@ function donutCard(title, data) {
   `;
 }
 
-function goalsProgressCard() {
-  if (!state.goals.length) return '';
+function goalsProgressCard(goals, title) {
+  if (!goals.length) return '';
 
-  const sorted = [...state.goals].sort((a, b) => {
+  const sorted = [...goals].sort((a, b) => {
     const ca = calcGoal(a), cb = calcGoal(b);
     return cb.percent - ca.percent;
   });
@@ -2086,7 +2265,7 @@ function goalsProgressCard() {
 
   return `
     <section class="card">
-      <div class="card-title">Прогресс по целям</div>
+      <div class="card-title">${title}</div>
       <div class="stat-hbars">${rows}</div>
     </section>
   `;
@@ -2142,8 +2321,9 @@ function keyStatsCard() {
   const baseExp = totalBaseExpenses();
   const goals = totalGoalsPerMonth();
   const free = income - baseExp - goals;
-  const totalSaved = state.goals.reduce((s, g) => s + goalSaved(g), 0);
-  const totalTargets = state.goals.reduce((s, g) => s + Number(g.target || 0), 0);
+  const all = allGoals();
+  const totalSaved = all.reduce((s, g) => s + goalSaved(g), 0);
+  const totalTargets = all.reduce((s, g) => s + Number(g.target || 0), 0);
   const savingRate = income > 0 ? ((goals / income) * 100) : 0;
 
   return `
@@ -2351,8 +2531,8 @@ function renderStats() {
 
   const hasIncome = state.monthlyIncomes.length > 0;
   const hasExpenses = state.expenses.length > 0;
-  const hasGoals = state.goals.length > 0;
-  const hasContribs = state.goals.some(g => (g.contributions || []).length > 0);
+  const hasGoals = state.goals.length > 0 || state.shortGoals.length > 0;
+  const hasContribs = allGoals().some(g => (g.contributions || []).length > 0);
 
   if (!hasIncome && !hasExpenses && !hasGoals) {
     el.innerHTML = '<section class="card"><div class="chart-empty">Пока нечего показывать — заполни данные во вкладке «План» 📋</div></section>';
@@ -2381,16 +2561,23 @@ function renderStats() {
     value: Number(e.amount) || 0,
     color: PALETTE[(idx + 2) % PALETTE.length],
   }));
-  const goalsMonth = totalGoalsPerMonth();
-  if (goalsMonth > 0) {
-    expData.push({ label: '🎯 Накопления на цели', value: goalsMonth, color: '#7c5cff' });
+  const longGoalsMonth = totalLongGoalsPerMonth();
+  const shortGoalsMonth = totalShortGoalsPerMonth();
+  if (longGoalsMonth > 0) {
+    expData.push({ label: '🎯 Долгосрочные цели', value: longGoalsMonth, color: '#7c5cff' });
+  }
+  if (shortGoalsMonth > 0) {
+    expData.push({ label: '🎯 Краткосрочные цели', value: shortGoalsMonth, color: '#ffc857' });
   }
   if (expData.length) {
     html += donutCard('Структура месячных расходов', expData);
   }
 
-  if (hasGoals) {
-    html += goalsProgressCard();
+  if (state.goals.length) {
+    html += goalsProgressCard(state.goals, 'Прогресс по долгосрочным целям');
+  }
+  if (state.shortGoals.length) {
+    html += goalsProgressCard(state.shortGoals, 'Прогресс по краткосрочным целям');
   }
 
   if (hasContribs) {
@@ -2403,6 +2590,8 @@ function renderStats() {
 
   el.innerHTML = html;
 }
+
+/* ---------- Добавление доходов и расходов ---------- */
 
 function addMonthlyIncome() {
   const nameEl = document.getElementById('miName');
@@ -2446,6 +2635,8 @@ function addExpense() {
   save(); renderExpenses(); renderTotal(); renderCalendar(); renderStats();
 }
 
+/* ---------- Экспорт / импорт ---------- */
+
 function download(filename, content, type) {
   const blob = new Blob([content], { type });
   const url = URL.createObjectURL(blob);
@@ -2464,7 +2655,9 @@ function csvEscape(v) {
 function exportCSV() {
   const income = totalMonthlyIncome();
   const baseExp = totalBaseExpenses();
-  const goalsPerMonth = totalGoalsPerMonth();
+  const longGoalsPerMonth = totalLongGoalsPerMonth();
+  const shortGoalsPerMonth = totalShortGoalsPerMonth();
+  const goalsPerMonth = longGoalsPerMonth + shortGoalsPerMonth;
   const totalExp = baseExp + goalsPerMonth;
   const oneTime = totalOneTimeThisMonth();
   const free = income - totalExp + oneTime;
@@ -2499,17 +2692,19 @@ function exportCSV() {
   if (!state.expenses.length) push('—', '0');
   push('ИТОГО обычных расходов', fmtNum(baseExp));
   push();
-  push('НАКОПЛЕНИЯ НА ЦЕЛИ (авто)', fmtNum(goalsPerMonth));
+  push('НАКОПЛЕНИЯ НА ДОЛГОСРОЧНЫЕ ЦЕЛИ (авто)', fmtNum(longGoalsPerMonth));
+  push('НАКОПЛЕНИЯ НА КРАТКОСРОЧНЫЕ ЦЕЛИ (авто)', fmtNum(shortGoalsPerMonth));
   push('ИТОГО РАСХОДОВ В МЕСЯЦ', fmtNum(totalExp));
   push();
 
-  push('ДОЛГОСРОЧНЫЕ ЦЕЛИ');
-  push('Название', 'Цель (₽)', 'Отложено (₽)', 'Осталось (₽)', 'Срок', 'Месяцев',
+  const goalHeader = ['Название', 'Цель (₽)', 'Отложено (₽)', 'Осталось (₽)', 'Срок', 'Месяцев',
        'Ставка %', 'Индексация %', 'Взнос 1-й год (₽)', 'Взнос последний (₽)',
-       'Доход от % (₽)', 'Прогресс', 'Взносов');
+       'Доход от % (₽)', 'Прогресс', 'Взносов'];
 
-  const sorted = [...state.goals].sort((a, b) => (a.deadline || '').localeCompare(b.deadline || ''));
-  sorted.forEach(g => {
+  push('ДОЛГОСРОЧНЫЕ ЦЕЛИ');
+  push(...goalHeader);
+  const sortedLong = [...state.goals].sort((a, b) => (a.deadline || '').localeCompare(b.deadline || ''));
+  sortedLong.forEach(g => {
     const c = calcGoal(g);
     const lastMonthly = c.yearBreakdown.length
       ? c.yearBreakdown[c.yearBreakdown.length - 1].monthly
@@ -2527,22 +2722,52 @@ function exportCSV() {
     );
   });
   if (!state.goals.length) push('—');
-  push('ИТОГО в месяц на цели', fmtNum(goalsPerMonth));
+  push('ИТОГО в месяц на долгосрочные цели', fmtNum(longGoalsPerMonth));
+  push();
+
+  push('КРАТКОСРОЧНЫЕ ЦЕЛИ');
+  push(...goalHeader);
+  const sortedShort = [...state.shortGoals].sort((a, b) => (a.deadline || '').localeCompare(b.deadline || ''));
+  sortedShort.forEach(g => {
+    const c = calcGoal(g);
+    const lastMonthly = c.yearBreakdown.length
+      ? c.yearBreakdown[c.yearBreakdown.length - 1].monthly
+      : c.perMonth;
+    push(
+      g.name, fmtNum(g.target), fmtNum(c.saved), fmtNum(c.remaining),
+      formatDeadline(g.deadline), c.months,
+      c.rateAnnual > 0 ? c.rateAnnual.toString() : '',
+      c.indexAnnual > 0 ? c.indexAnnual.toString() : '',
+      fmtNum(c.perMonth),
+      fmtNum(lastMonthly),
+      c.interestEarned > 0 ? fmtNum(c.interestEarned) : '',
+      Math.round(c.percent) + '%',
+      (g.contributions || []).length
+    );
+  });
+  if (!state.shortGoals.length) push('—');
+  push('ИТОГО в месяц на краткосрочные цели', fmtNum(shortGoalsPerMonth));
   push();
 
   push('ВЗНОСЫ');
-  push('Цель', 'Дата', 'Сумма (₽)');
-  sorted.forEach(g => {
+  push('Тип', 'Цель', 'Дата', 'Сумма (₽)');
+  sortedLong.forEach(g => {
     (g.contributions || [])
       .slice().sort((a, b) => a.date.localeCompare(b.date))
-      .forEach(cn => push(g.name, cn.date, fmtNum(cn.amount)));
+      .forEach(cn => push('Долгосрочная', g.name, cn.date, fmtNum(cn.amount)));
+  });
+  sortedShort.forEach(g => {
+    (g.contributions || [])
+      .slice().sort((a, b) => a.date.localeCompare(b.date))
+      .forEach(cn => push('Краткосрочная', g.name, cn.date, fmtNum(cn.amount)));
   });
   push();
 
   push('ИТОГ');
   push('Месячный доход', fmtNum(income));
   push('Расходы в месяц (вкл. цели)', '−' + fmtNum(totalExp));
-  push('  в т.ч. накопления на цели', '−' + fmtNum(goalsPerMonth));
+  push('  в т.ч. на долгосрочные цели', '−' + fmtNum(longGoalsPerMonth));
+  push('  в т.ч. на краткосрочные цели', '−' + fmtNum(shortGoalsPerMonth));
   push('Разовые доходы (в этом месяце)', '+' + fmtNum(oneTime));
   push('Свободно на жизнь', fmtNum(free));
 
@@ -2554,11 +2779,12 @@ function exportCSV() {
 function exportJSON() {
   const data = {
     exportedAt: new Date().toISOString(),
-    version: 5,
+    version: 6,
     monthlyIncomes: state.monthlyIncomes,
     oneTimeIncomes: state.oneTimeIncomes,
     expenses: state.expenses,
     goals: state.goals,
+    shortGoals: state.shortGoals,
   };
   const json = JSON.stringify(data, null, 2);
   download(`finance_backup_${todayStr()}.json`, json, 'application/json');
@@ -2602,8 +2828,8 @@ function importJSON(file) {
           }))
         : [];
 
-      const goals = Array.isArray(data.goals)
-        ? data.goals.map(g => {
+      const parseGoals = arr => Array.isArray(arr)
+        ? arr.map(g => {
             const contributions = Array.isArray(g.contributions)
               ? g.contributions.map(c => ({
                   id: c.id || uid(),
@@ -2626,11 +2852,15 @@ function importJSON(file) {
           })
         : [];
 
-      state = { monthlyIncomes, oneTimeIncomes, expenses, goals };
+      const goals = parseGoals(data.goals);
+      const shortGoals = parseGoals(data.shortGoals);
+
+      state = { monthlyIncomes, oneTimeIncomes, expenses, goals, shortGoals };
 
       save();
       renderMonthlyIncomes(); renderOneTimeIncomes(); renderExpenses();
-      renderGoals(); renderTotal(); renderCalendar(); renderStats();
+      renderGoals(); renderShortGoals();
+      renderTotal(); renderCalendar(); renderStats();
       showToast('Данные восстановлены');
     } catch (err) {
       console.error(err);
@@ -2639,6 +2869,8 @@ function importJSON(file) {
   };
   reader.readAsText(file);
 }
+
+/* ---------- Toast ---------- */
 
 let toastTimer;
 function showToast(msg, isError, action) {
@@ -2668,6 +2900,8 @@ function hideToast() {
   document.getElementById('toast').classList.remove('show');
 }
 
+/* ---------- Табы ---------- */
+
 function switchTab(name) {
   document.querySelectorAll('.tab').forEach(t => {
     t.classList.toggle('active', t.dataset.tab === name);
@@ -2679,6 +2913,52 @@ function switchTab(name) {
   if (name === 'stats') renderStats();
 }
 
+/* ---------- Сворачиваемые секции ---------- */
+
+function initCollapsibles() {
+  document.querySelectorAll('.collapsible [data-collapse-toggle]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const card = btn.closest('.collapsible');
+      card.classList.toggle('collapsed');
+      saveCollapsedState();
+    });
+  });
+
+  document.querySelectorAll('.collapsible .card-title-text').forEach(el => {
+    el.style.cursor = 'pointer';
+    el.addEventListener('click', () => {
+      el.closest('.collapsible').querySelector('[data-collapse-toggle]').click();
+    });
+  });
+
+  restoreCollapsedState();
+}
+
+function saveCollapsedState() {
+  const collapsed = [...document.querySelectorAll('.collapsible.collapsed')]
+    .map(c => c.dataset.collapseId)
+    .filter(Boolean);
+  try {
+    localStorage.setItem(UI_STORAGE_KEY, JSON.stringify(collapsed));
+  } catch (e) {}
+}
+
+function restoreCollapsedState() {
+  try {
+    const raw = localStorage.getItem(UI_STORAGE_KEY);
+    if (!raw) return;
+    const collapsed = JSON.parse(raw);
+    if (!Array.isArray(collapsed)) return;
+    collapsed.forEach(id => {
+      const card = document.querySelector(`.collapsible[data-collapse-id="${id}"]`);
+      if (card) card.classList.add('collapsed');
+    });
+  } catch (e) {}
+}
+
+/* ---------- Инициализация ---------- */
+
 load();
 
 document.getElementById('oiDate').value = todayStr();
@@ -2687,6 +2967,7 @@ renderMonthlyIncomes();
 renderOneTimeIncomes();
 renderExpenses();
 renderGoals();
+renderShortGoals();
 renderTotal();
 renderCalendar();
 renderStats();
@@ -2716,7 +2997,11 @@ document.getElementById('expAmount').addEventListener('keydown', e => {
 });
 
 document.getElementById('toggleGoalForm').onclick = () => {
-  openGoalModal('add');
+  openGoalModal('add', null, 'long');
+};
+
+document.getElementById('toggleShortGoalForm').onclick = () => {
+  openGoalModal('add', null, 'short');
 };
 
 document.getElementById('goalModalClose').onclick = closeGoalModal;
@@ -2788,11 +3073,12 @@ document.querySelectorAll('.tab').forEach(t => {
   t.onclick = () => switchTab(t.dataset.tab);
 });
 
+initCollapsibles();
+
 /* ============================================================
    PWA — Манифест, иконки, Service Worker, установка
    ============================================================ */
 
-// SVG-иконка приложения — рисуется кодом, не требует внешних файлов
 const ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
@@ -2809,7 +3095,6 @@ const ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
 const ICON_DATA_URI = 'data:image/svg+xml;base64,' +
   btoa(unescape(encodeURIComponent(ICON_SVG)));
 
-// Инжектим manifest как data URI — работает в Chrome/Edge/Brave/Opera без отдельного файла
 (function injectManifest() {
   const manifest = {
     name: 'Планировщик финансов',
@@ -2839,13 +3124,11 @@ const ICON_DATA_URI = 'data:image/svg+xml;base64,' +
   link.href = manifestUri;
   document.head.appendChild(link);
 
-  // Apple touch icon — iOS требует PNG, но SVG тоже работает на современных версиях
   const appleIcon = document.createElement('link');
   appleIcon.rel = 'apple-touch-icon';
   appleIcon.href = ICON_DATA_URI;
   document.head.appendChild(appleIcon);
 
-  // Favicon
   const favicon = document.createElement('link');
   favicon.rel = 'icon';
   favicon.type = 'image/svg+xml';
@@ -2853,14 +3136,12 @@ const ICON_DATA_URI = 'data:image/svg+xml;base64,' +
   document.head.appendChild(favicon);
 })();
 
-// Проверка: уже установлено как PWA?
 function isStandalone() {
   return window.matchMedia('(display-mode: standalone)').matches ||
          window.matchMedia('(display-mode: fullscreen)').matches ||
          window.navigator.standalone === true;
 }
 
-// Регистрация Service Worker (работает только на http(s), не на file://)
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js', { scope: './' })
@@ -2869,7 +3150,6 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   });
 }
 
-// Install prompt
 let deferredInstallPrompt = null;
 const installBtn = document.getElementById('installPwaBtn');
 
@@ -2898,12 +3178,10 @@ window.addEventListener('appinstalled', () => {
   showToast('Приложение установлено 🎉');
 });
 
-// Если уже установлено — кнопку не показываем
 if (isStandalone()) {
   installBtn.style.display = 'none';
 }
 
-// iOS Safari не поддерживает beforeinstallprompt — показываем подсказку один раз
 (function iosInstallHint() {
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
   const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
@@ -2912,7 +3190,6 @@ if (isStandalone()) {
     const dismissed = localStorage.getItem('ios_install_hint_dismissed');
     if (dismissed) return;
 
-    // Показываем через 3 секунды, чтобы не мешать первому впечатлению
     setTimeout(() => {
       showToast('📲 Установи на iPhone: Поделиться → На экран «Домой»', false, {
         label: 'Понятно',
