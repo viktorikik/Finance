@@ -14,7 +14,7 @@
    11. Календарь (v1.9: план vs факт)
    12. Статистика
    13. CRUD доходов/расходов
-   14. Экспорт / импорт
+   14. Экспорт / импорт (CSV, JSON, HTML, PDF)
    15. Toast
    16. Табы
    17. Сворачиваемые секции
@@ -540,7 +540,7 @@ function renderExpenses() {
 }
 
 /* ==========================================================================
-   7. РЕНДЕР КАРТОЧЕК ЦЕЛЕЙ (общий для long/short)
+   7. РЕНДЕР КАРТОЧЕК ЦЕЛЕЙ
    ========================================================================== */
 
 function renderContribChart(g) {
@@ -658,7 +658,6 @@ function renderGoalListInto(el, hint, goals) {
         <div class="goal-card ${hasRate ? 'with-rate' : ''}" data-goal-card="${g.id}">
           <div class="goal-content">
             
-            <!-- Верхний блок: Название и Ставки -->
             <div class="goal-top">
               <div class="goal-title-wrap">
                 <div class="goal-name">${escapeHtml(g.name)}</div>
@@ -669,9 +668,11 @@ function renderGoalListInto(el, hint, goals) {
                   </div>
                 ` : ''}
               </div>
+              <button class="goal-collapse-toggle" title="Свернуть/Развернуть">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
             </div>
 
-            <!-- Главный блок: Взнос и Дедлайн -->
             <div class="goal-main">
               <div class="goal-monthly-wrap">
                 ${monthlyHtml}
@@ -682,7 +683,6 @@ function renderGoalListInto(el, hint, goals) {
               </div>
             </div>
 
-            <!-- Прогресс -->
             <div class="goal-progress-wrap">
               <div class="progress-bar">
                 <div class="progress-fill ${fillClass}" style="width:${c.percent}%"></div>
@@ -693,23 +693,23 @@ function renderGoalListInto(el, hint, goals) {
               </div>
             </div>
 
-            ${rateInfo}
-            ${indexInfo}
-            ${indexBreakdown}
+            <div class="goal-details">
+              ${rateInfo}
+              ${indexInfo}
+              ${indexBreakdown}
 
-            <!-- Форма взноса -->
-            <div class="contrib-form" data-goal-id="${g.id}">
-              <input type="number" placeholder="Взнос ₽" min="0" step="100" data-contrib-input>
-              <input type="date" value="${todayStr()}" data-contrib-date>
-              <button type="button" data-add-contrib>+</button>
+              <div class="contrib-form" data-goal-id="${g.id}">
+                <input type="number" placeholder="Взнос ₽" min="0" step="100" data-contrib-input>
+                <input type="date" value="${todayStr()}" data-contrib-date>
+                <button type="button" data-add-contrib>+</button>
+              </div>
+
+              <details class="contrib-history">
+                <summary>История взносов (${contribs.length})</summary>
+                ${chart}
+                <div class="contrib-list">${contribList}</div>
+              </details>
             </div>
-
-            <!-- История взносов -->
-            <details class="contrib-history">
-              <summary>История взносов (${contribs.length})</summary>
-              ${chart}
-              <div class="contrib-list">${contribList}</div>
-            </details>
 
           </div>
         </div>
@@ -719,15 +719,28 @@ function renderGoalListInto(el, hint, goals) {
 
   el.querySelectorAll('[data-goal-card]').forEach(card => {
     const gid = card.dataset.goalCard;
+    
+    // Обработчик клика по карточке (открыть модалку редактирования)
     card.addEventListener('click', e => {
       if (card.dataset.justSwiped) return;
-      if (e.target.closest('input, button, textarea, select, summary, details')) return;
+      // Игнорируем клики по интерактивным элементам
+      if (e.target.closest('input, button, textarea, select, summary, details, .goal-collapse-toggle, .contrib-form')) return;
       if (card.dataset.swiped === 'true') {
         resetSwipe(card);
         return;
       }
       openGoalModal('edit', gid);
     });
+
+    // Обработчик кнопки сворачивания
+    const btn = card.querySelector('.goal-collapse-toggle');
+    if (btn) {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        card.classList.toggle('collapsed');
+      });
+    }
+
     attachSwipe(card);
   });
 
@@ -807,7 +820,7 @@ let swipeState = null;
 function attachSwipe(card) {
   card.addEventListener('pointerdown', e => {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
-    if (e.target.closest('input, button, textarea, select, summary, details, .contrib-form')) return;
+    if (e.target.closest('input, button, textarea, select, summary, details, .contrib-form, .goal-collapse-toggle')) return;
 
     swipeState = {
       card,
@@ -2136,6 +2149,187 @@ function importJSON(file) {
   reader.readAsText(file);
 }
 
+/* ----- НОВЫЙ БЛОК: ФИНАНСОВЫЙ ПЛАН (HTML / PDF) ----- */
+
+function generatePlanHTML() {
+  const income = totalMonthlyIncome();
+  const baseExp = totalBaseExpenses();
+  const longGoals = totalLongGoalsPerMonth();
+  const shortGoals = totalShortGoalsPerMonth();
+  const goalsPerMonth = longGoals + shortGoals;
+  const totalExp = baseExp + goalsPerMonth;
+  const free = income - totalExp;
+  
+  const today = new Date().toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+  const all = allGoals();
+  const totalSaved = all.reduce((s, g) => s + goalSaved(g), 0);
+  const totalTargets = all.reduce((s, g) => s + Number(g.target || 0), 0);
+
+  const renderGoalBlock = (g) => {
+    const c = calcGoal(g);
+    const isDone = c.done;
+    const progressColor = isDone ? '#3ddc97' : '#7c5cff';
+    
+    return `
+      <div class="report-goal">
+        <div class="rg-header">
+          <span class="rg-name">${escapeHtml(g.name)}</span>
+          <span class="rg-deadline">К ${formatDeadline(g.deadline)}</span>
+        </div>
+        <div class="rg-progress-bar">
+          <div class="rg-progress-fill" style="width: ${c.percent}%; background: ${progressColor}"></div>
+        </div>
+        <div class="rg-stats">
+          <span>Накоплено: <b>${fmt(c.saved)}</b> из ${fmt(g.target)} (${Math.round(c.percent)}%)</span>
+          <span class="rg-monthly">${isDone ? 'Цель достигнута 🎉' : `Взнос: <b>${fmt(c.perMonth)}/мес</b>`}</span>
+        </div>
+        ${c.rateAnnual > 0 ? `<div class="rg-note">💹 Ставка: ${c.rateAnnual}% годовых. Доход к сроку ≈ ${fmt(c.interestEarned)}</div>` : ''}
+        ${c.indexAnnual > 0 ? `<div class="rg-note">📈 Индексация взноса: ${c.indexAnnual}%/год</div>` : ''}
+      </div>
+    `;
+  };
+
+  const longGoalsHtml = state.goals.length ? state.goals.map(renderGoalBlock).join('') : '<p class="empty">Нет целей</p>';
+  const shortGoalsHtml = state.shortGoals.length ? state.shortGoals.map(renderGoalBlock).join('') : '<p class="empty">Нет целей</p>';
+
+  return `
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Финансовый план на ${today}</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #f9fafb;
+      color: #1f2937;
+      line-height: 1.5;
+      margin: 0;
+      padding: 40px 20px;
+    }
+    .report-container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    }
+    .header { text-align: center; margin-bottom: 40px; padding-bottom: 20px; border-bottom: 2px solid #e5e7eb; }
+    .header h1 { margin: 0 0 10px; font-size: 28px; color: #111827; }
+    .header p { margin: 0; color: #6b7280; font-size: 14px; }
+    
+    .summary-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 30px; }
+    .summary-card { background: #f3f4f6; padding: 16px; border-radius: 8px; border-left: 4px solid #7c5cff; }
+    .summary-card.green { border-left-color: #3ddc97; }
+    .summary-card.red { border-left-color: #ef4444; }
+    .sc-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #6b7280; font-weight: 600; margin-bottom: 4px; }
+    .sc-value { font-size: 20px; font-weight: 700; color: #111827; font-variant-numeric: tabular-nums; }
+    .sc-value.green { color: #059669; }
+    .sc-value.red { color: #dc2626; }
+    
+    .section-title { font-size: 18px; font-weight: 700; color: #111827; margin: 30px 0 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e7eb; }
+    
+    .report-goal { margin-bottom: 20px; padding: 16px; background: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb; page-break-inside: avoid; }
+    .rg-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+    .rg-name { font-size: 16px; font-weight: 600; color: #111827; }
+    .rg-deadline { font-size: 13px; color: #6b7280; }
+    .rg-progress-bar { height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden; margin-bottom: 8px; }
+    .rg-progress-fill { height: 100%; border-radius: 4px; }
+    .rg-stats { display: flex; justify-content: space-between; font-size: 13px; color: #4b5563; }
+    .rg-monthly b { color: #7c5cff; font-size: 14px; }
+    .rg-note { font-size: 12px; color: #6b7280; margin-top: 6px; }
+    .empty { color: #9ca3af; font-style: italic; font-size: 14px; }
+    
+    .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; font-size: 12px; color: #9ca3af; }
+
+    @media print {
+      body { background: #fff; padding: 0; }
+      .report-container { box-shadow: none; padding: 0; max-width: 100%; }
+      .summary-card { border: 1px solid #e5e7eb; background: #fff; }
+    }
+  </style>
+</head>
+<body>
+  <div class="report-container">
+    <div class="header">
+      <h1>💰 Мой финансовый план</h1>
+      <p>Сформирован ${today}</p>
+    </div>
+
+    <div class="summary-grid">
+      <div class="summary-card green">
+        <div class="sc-label">Месячный доход</div>
+        <div class="sc-value green">${fmt(income)}</div>
+      </div>
+      <div class="summary-card">
+        <div class="sc-label">Всего накоплено</div>
+        <div class="sc-value">${fmt(totalSaved)}</div>
+      </div>
+      <div class="summary-card red">
+        <div class="sc-label">Расходы и цели (в мес)</div>
+        <div class="sc-value red">−${fmt(totalExp)}</div>
+      </div>
+      <div class="summary-card ${free < 0 ? 'red' : ''}" style="border-left-color: ${free < 0 ? '#ef4444' : '#3ddc97'};">
+        <div class="sc-label">Свободные средства</div>
+        <div class="sc-value ${free < 0 ? 'red' : 'green'}">${free < 0 ? '−' + fmt(Math.abs(free)) : fmt(free)}</div>
+      </div>
+    </div>
+
+    <div class="section-title">📋 Структура бюджета (в месяц)</div>
+    <div style="margin-bottom: 30px;">
+      <p style="margin: 0 0 8px; font-size: 14px;"><b>Базовые расходы:</b> ${fmt(baseExp)}</p>
+      <p style="margin: 0 0 8px; font-size: 14px;"><b>Взносы в цели:</b> ${fmt(goalsPerMonth)} <span style="color:#6b7280">(в т.ч. долгосрочные — ${fmt(longGoals)}, краткосрочные — ${fmt(shortGoals)})</span></p>
+      <p style="margin: 0; font-size: 14px;"><b>Остаток на жизнь:</b> ${fmt(free)}</p>
+    </div>
+
+    <div class="section-title">🎯 Долгосрочные цели</div>
+    ${longGoalsHtml}
+
+    <div class="section-title">⏳ Краткосрочные цели</div>
+    ${shortGoalsHtml}
+
+    <div class="footer">
+      Общая цель: ${fmt(totalTargets)} · Накоплено: ${fmt(totalSaved)} · Осталось: ${fmt(totalTargets - totalSaved)}<br>
+      Сгенерировано в приложении «Планировщик финансов»
+    </div>
+  </div>
+</body>
+</html>
+  `;
+}
+
+function exportPlanHTML() {
+  const html = generatePlanHTML();
+  download(`finance_plan_${todayStr()}.html`, html, 'text/html');
+  showToast('HTML-план скачан');
+}
+
+function exportPlanPDF() {
+  const html = generatePlanHTML();
+  const iframe = document.createElement('iframe');
+  iframe.style.position = 'fixed';
+  iframe.style.right = '0';
+  iframe.style.bottom = '0';
+  iframe.style.width = '0';
+  iframe.style.height = '0';
+  iframe.style.border = '0';
+  document.body.appendChild(iframe);
+
+  iframe.onload = () => {
+    setTimeout(() => {
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+      setTimeout(() => {
+        document.body.removeChild(iframe);
+      }, 1000);
+    }, 500);
+  };
+
+  iframe.srcdoc = html;
+}
+
 /* ==========================================================================
    15. TOAST
    ========================================================================== */
@@ -2355,6 +2549,17 @@ document.getElementById('importFile').addEventListener('change', e => {
   if (file) importJSON(file);
   e.target.value = '';
 });
+
+// Экспорт плана
+document.getElementById('exportPlanHtmlBtn').onclick = () => {
+  // Показываем выбор: HTML или PDF (Печать)
+  const choice = confirm('Нажмите ОК, чтобы открыть системное окно печати (там можно выбрать "Сохранить как PDF").\n\nНажмите Отмена, чтобы просто скачать HTML-файл.');
+  if (choice) {
+    exportPlanPDF();
+  } else {
+    exportPlanHTML();
+  }
+};
 
 document.querySelectorAll('.tab').forEach(t => {
   t.onclick = () => switchTab(t.dataset.tab);
