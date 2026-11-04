@@ -535,7 +535,7 @@ button.btn-secondary:hover {
 }
 
 /* =========================================================
-   НОВАЯ КАРТОЧКА ЦЕЛИ (Переработана)
+   КАРТОЧКА ЦЕЛИ
 ========================================================= */
 .goal-card {
   position: relative;
@@ -586,6 +586,7 @@ button.btn-secondary:hover {
   flex-direction: column;
   gap: 6px;
   min-width: 0;
+  flex: 1;
 }
 
 .goal-name {
@@ -611,6 +612,38 @@ button.btn-secondary:hover {
   background: var(--card);
   color: var(--muted);
   border: 1px solid var(--border);
+}
+
+/* Кнопка сворачивания карточки */
+.goal-collapse-toggle {
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+.goal-collapse-toggle:hover {
+  color: var(--text);
+  background: var(--border);
+}
+.goal-collapse-toggle svg {
+  transition: transform 0.2s;
+}
+.goal-card.collapsed .goal-collapse-toggle svg {
+  transform: rotate(-90deg);
+}
+.goal-card.collapsed .goal-details {
+  display: none;
+}
+.goal-card.collapsed .goal-progress-wrap {
+  margin-top: 4px;
 }
 
 /* Главный блок (Взнос + Дедлайн) */
@@ -720,6 +753,16 @@ button.btn-secondary:hover {
   color: var(--accent);
 }
 
+/* Обертка для скрываемых деталей */
+.goal-details {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  border-top: 1px dashed var(--border);
+  padding-top: 14px;
+  margin-top: 4px;
+}
+
 /* Блок процентов */
 .goal-rate-info, .goal-index-info {
   display: flex;
@@ -752,7 +795,6 @@ button.btn-secondary:hover {
   grid-template-columns: 1fr 1fr auto;
   gap: 8px;
   align-items: center;
-  margin-top: 4px;
 }
 
 .contrib-form input[type="number"] {
