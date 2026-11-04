@@ -1,6 +1,8 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
+  color-scheme: dark; /* Помогает нативным элементам (даты, селекты) быть тёмными */
+  
   --bg: #0f1117;
   --card: #1a1d27;
   --card-2: #232733;
@@ -78,8 +80,12 @@ html.privacy-mode .item-row .amt,
 html.privacy-mode .list-total .val,
 html.privacy-mode .contrib-item .amt,
 html.privacy-mode .cal-sum-row .v,
-html.privacy-mode .cal-total,
+html.privacy-mode .cal-row > div:not(.cal-month):not(.cal-status),
 html.privacy-mode .legend-value,
+html.privacy-mode .mm-plan,
+html.privacy-mode .mm-fact-total,
+html.privacy-mode .mm-manual-item,
+html.privacy-mode .mm-total-row span:last-child,
 html.privacy-mode .money {
   filter: blur(5px);
   user-select: none;
@@ -146,6 +152,7 @@ html.privacy-mode .money {
 }
 .card-title button.toggle:hover { background: rgba(124,92,255,0.12); }
 
+/* ИСПРАВЛЕНИЕ ИНПУТОВ */
 input, select {
   background: var(--card-2); border: 1px solid var(--border);
   border-radius: 10px; color: var(--text);
@@ -157,13 +164,31 @@ input:focus, select:focus {
   border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124,92,255,0.15);
 }
 input::placeholder { color: #5b6175; }
-input[type="date"] { font-family: inherit; }
+
+/* Жёсткая фиксация дат и месяцев на iOS */
+input[type="date"], input[type="month"] {
+  -webkit-appearance: none;
+  appearance: none;
+  display: flex;
+  align-items: center;
+  min-height: 46px;
+  text-align: left;
+  padding: 0 13px;
+}
+/* Убираем гигантский текст и центрирование у нативных пикеров iOS */
+input[type="date"]::-webkit-date-and-time-value,
+input[type="month"]::-webkit-date-and-time-value {
+  text-align: left;
+  margin: 0;
+  font-size: 15px;
+}
 input[type="date"]::-webkit-calendar-picker-indicator,
 input[type="month"]::-webkit-calendar-picker-indicator {
   filter: invert(0.6); cursor: pointer;
 }
 select {
   appearance: none;
+  -webkit-appearance: none;
   background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238b91a3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'/%3e%3c/svg%3e");
   background-repeat: no-repeat;
   background-position: right 12px center;
@@ -328,6 +353,27 @@ button.btn-secondary:hover { background: var(--border); border-color: var(--acce
 .goal-name { font-size: 16px; font-weight: 600; line-height: 1.4; }
 .goal-meta { font-size: 12px; color: var(--muted); margin-top: 3px; }
 
+/* v1.9: Бейджи план/факт */
+.goal-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  letter-spacing: 0.3px;
+}
+.goal-badge.ok {
+  background: rgba(61,220,151,0.15);
+  color: var(--green);
+  border: 1px solid rgba(61,220,151,0.3);
+}
+.goal-badge.late {
+  background: rgba(255,92,124,0.15);
+  color: var(--red);
+  border: 1px solid rgba(255,92,124,0.3);
+}
+
 .goal-rate-badge {
   display: inline-block;
   background: rgba(61,220,151,0.15);
@@ -433,7 +479,7 @@ button.btn-secondary:hover { background: var(--border); border-color: var(--acce
   flex: 1; min-width: 0; padding: 8px 12px; font-size: 14px;
 }
 .contrib-form input[type="date"] {
-  width: 145px; padding: 8px 10px; font-size: 13px;
+  width: 145px; padding: 8px 10px; font-size: 13px; min-height: 38px;
 }
 .contrib-form button {
   background: var(--accent); color: #fff; border: none; border-radius: 8px;
@@ -480,6 +526,9 @@ details.contrib-history summary:hover { color: var(--text); }
   width: 100%; height: 50px; display: block; margin: 10px 0 6px;
 }
 
+/* =========================================================
+   v1.9: КАЛЕНДАРЬ
+========================================================= */
 .cal-summary {
   background: var(--card-2); border-radius: 12px; padding: 14px 16px;
   margin-bottom: 14px;
@@ -493,30 +542,67 @@ details.contrib-history summary:hover { color: var(--text); }
 }
 .cal-sum-row .v.warn { color: var(--red); }
 
+.cal-table {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cal-table-head {
+  display: grid;
+  grid-template-columns: 2fr 1.2fr 1.2fr 1.5fr 1.2fr;
+  padding: 0 12px 6px;
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-align: right;
+}
+.cal-table-head span:first-child { text-align: left; }
+
 .cal-row {
   display: grid;
-  grid-template-columns: 80px 1fr auto;
-  gap: 12px; align-items: center;
-  padding: 10px 12px; border-radius: 10px; margin-bottom: 6px;
-  background: var(--card-2); font-size: 13px;
-  border-left: 3px solid transparent;
+  grid-template-columns: 2fr 1.2fr 1.2fr 1.5fr 1.2fr;
+  align-items: center;
+  padding: 12px;
+  background: var(--card-2);
+  border-radius: 10px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s;
+  border: 1px solid transparent;
+  font-variant-numeric: tabular-nums;
 }
-.cal-row.overload {
-  border-left-color: var(--red);
-  background: rgba(255,92,124,0.08);
+.cal-row:hover { background: var(--border); }
+.cal-row > div { text-align: right; }
+
+.cal-row .cal-month { text-align: left; font-weight: 600; }
+.cal-row .cal-plan { color: var(--muted); }
+.cal-row .cal-fact { font-weight: 600; }
+.cal-row .cal-cumul { font-weight: 600; }
+.cal-row .cal-status { font-size: 12px; font-weight: 700; white-space: nowrap; }
+
+.cal-row-late { border-color: rgba(255,92,124,0.3); }
+.cal-row-late .cal-status { color: var(--red); }
+.cal-row-ok .cal-status { color: var(--green); }
+.cal-row-plan .cal-status { color: var(--muted); }
+.cal-row-none { opacity: 0.6; }
+
+@media (max-width: 520px) {
+  .cal-table-head { display: none; }
+  .cal-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 10px;
+  }
+  .cal-row .cal-month { flex: 1 1 100%; font-size: 14px; border-bottom: 1px solid var(--border); padding-bottom: 4px; margin-bottom: 2px; }
+  .cal-row .cal-plan, .cal-row .cal-fact, .cal-row .cal-cumul { font-size: 12px; text-align: left; }
+  .cal-row .cal-plan::before { content: 'План: '; color: var(--muted); }
+  .cal-row .cal-fact::before { content: 'Факт: '; color: var(--muted); }
+  .cal-row .cal-cumul::before { content: 'Итого: '; color: var(--muted); }
+  .cal-row .cal-status { margin-left: auto; }
 }
-.cal-month {
-  font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums;
-}
-.cal-breakdown {
-  color: var(--muted); font-size: 12px;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.cal-total {
-  font-weight: 700; font-variant-numeric: tabular-nums;
-  text-align: right; white-space: nowrap;
-}
-.cal-row.overload .cal-total { color: var(--red); }
 
 .warning-banner {
   background: rgba(255,92,124,0.1); border: 1px solid rgba(255,92,124,0.3);
@@ -524,11 +610,98 @@ details.contrib-history summary:hover { color: var(--text); }
   font-size: 13px; margin-bottom: 14px; line-height: 1.5;
 }
 
-@media (max-width: 520px) {
-  .cal-row { grid-template-columns: 70px 1fr auto; font-size: 12px; }
-  .cal-breakdown { display: none; }
+/* =========================================================
+   v1.9: МОДАЛКА МЕСЯЦА
+========================================================= */
+.modal-month .modal-body {
+  gap: 16px;
 }
 
+.mm-section { margin-bottom: 8px; }
+.mm-section-title {
+  font-size: 11px; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.5px;
+  font-weight: 700; margin-bottom: 8px;
+}
+
+.mm-goal {
+  background: var(--card-2);
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 8px;
+  border: 1px solid var(--border);
+}
+
+.mm-goal-head {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 8px;
+}
+
+/* Кастомный чекбокс */
+.mm-check {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 22px; height: 22px;
+  border: 1.5px solid var(--muted);
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer; flex-shrink: 0;
+  position: relative;
+  transition: all 0.15s;
+}
+.mm-check:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.mm-check:checked::after {
+  content: '';
+  position: absolute; top: 3px; left: 7px;
+  width: 5px; height: 10px;
+  border: solid white; border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.mm-name { font-weight: 600; font-size: 14px; flex: 1; cursor: pointer; line-height: 1.3; }
+.mm-plan { font-size: 11px; color: var(--muted); white-space: nowrap; }
+.mm-fact-total { font-weight: 700; color: var(--green); font-size: 14px; margin-left: auto; }
+
+.mm-input-row {
+  display: flex; gap: 8px; margin-top: 8px;
+}
+.mm-input-row input[type="number"] { flex: 1; padding: 8px 10px; font-size: 14px; min-height: 38px; }
+.mm-input-row input[type="date"] { width: 140px; padding: 8px 10px; font-size: 13px; min-height: 38px; }
+
+.mm-manual {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;
+}
+.mm-manual-item {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(0,0,0,0.2);
+  padding: 4px 8px; border-radius: 6px;
+  font-size: 12px;
+}
+.mm-manual-date { color: var(--muted); font-size: 11px; }
+.mm-del-manual {
+  background: transparent; border: none; color: var(--muted);
+  cursor: pointer; font-size: 15px; line-height: 1;
+  padding: 0 2px; transition: color 0.15s;
+}
+.mm-del-manual:hover { color: var(--red); }
+
+.mm-totals {
+  margin-top: 16px; padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.mm-total-row {
+  display: flex; justify-content: space-between;
+  font-size: 14px; padding: 4px 0; font-weight: 600;
+}
+.mm-total-row.late { color: var(--red); }
+.mm-total-row.ok { color: var(--green); }
+
+/* =========================================================
+   СТАТИСТИКА
+========================================================= */
 .stat-grid {
   display: grid; grid-template-columns: 200px 1fr; gap: 20px; align-items: center;
 }
@@ -642,16 +815,33 @@ details.contrib-history summary:hover { color: var(--text); }
   border-color: var(--accent); color: var(--text); background: rgba(124,92,255,0.08);
 }
 
+/* ИСПРАВЛЕНИЕ ЧЕКБОКСОВ В МОДАЛКЕ ЦЕЛИ */
 .rate-toggle-row {
   display: flex; align-items: flex-start; gap: 10px;
   padding: 4px 0; cursor: pointer; user-select: none;
 }
 .rate-toggle-row input[type="checkbox"] {
-  width: 18px; height: 18px;
-  accent-color: var(--accent);
-  cursor: pointer;
-  flex-shrink: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  width: 22px; height: 22px;
+  border: 1.5px solid var(--muted);
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer; flex-shrink: 0;
+  position: relative;
   margin-top: 2px;
+  transition: all 0.15s;
+}
+.rate-toggle-row input[type="checkbox"]:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.rate-toggle-row input[type="checkbox"]:checked::after {
+  content: '';
+  position: absolute; top: 3px; left: 7px;
+  width: 5px; height: 10px;
+  border: solid white; border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
 }
 .rate-toggle-row label {
   cursor: pointer;
