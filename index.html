@@ -288,6 +288,20 @@
   </div>
 </div>
 
+<!-- v1.9: модалка месяца (план vs факт) -->
+<div class="modal-overlay" id="monthModal" style="display:none">
+  <div class="modal modal-month">
+    <div class="modal-header">
+      <div class="modal-title" id="monthModalTitle">Месяц</div>
+      <button class="modal-close" id="monthModalClose" aria-label="Закрыть">×</button>
+    </div>
+    <div class="modal-body" id="monthModalBody"></div>
+    <div class="modal-actions">
+      <button class="btn cancel" id="monthModalCloseBtn">Закрыть</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast">
   <span id="toastMsg"></span>
   <button id="toastAction" style="display:none"></button>
