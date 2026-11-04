@@ -386,33 +386,21 @@ function cumulativeUpTo(monthKey) {
   }, 0);
 }
 
-function planVsFactBadge(goal) {
-  const c = calcGoal(goal);
-  if (c.done || c.overdue) return null;
-
-  const curIdx = currentMonthIdx();
-  const planM = plannedForGoalInMonth(goal, curIdx);
-  if (planM <= 0) return null;
-
-  const factM = actualForGoalInMonth(goal, currentMonthKey());
-  const diff = planM - factM;
-
-  if (diff <= 0) return { cls: 'ok', label: '✅ в плане' };
-  return { cls: 'late', label: `⚠️ −${fmtNum(diff)} ₽` };
-}
-
 function statusForMonth(monthIdx, planM, factM) {
   const cur = currentMonthIdx();
   if (monthIdx > cur) {
     return planM > 0
-      ? { cls: 'plan', label: '⬜' }
+      ? { cls: 'plan', label: '<span class="status-desc">Запланировано</span>' }
       : { cls: 'none', label: '—' };
   }
   if (planM === 0 && factM === 0) return { cls: 'none', label: '—' };
-  if (planM === 0 && factM > 0) return { cls: 'ok', label: '✓' };
+  if (planM === 0 && factM > 0) return { cls: 'ok', label: '<span class="status-desc">✓ Внесено досрочно</span>' };
   const diff = planM - factM;
-  if (diff <= 0) return { cls: 'ok', label: '✅' };
-  return { cls: 'late', label: `⚠️ −${fmtNum(diff)} ₽` };
+  if (diff <= 0) return { cls: 'ok', label: '<span class="status-desc">✅ В плане</span>' };
+  return { 
+    cls: 'late', 
+    label: `<span class="status-icon">⚠️</span> <span class="status-desc">Не хватает: <span class="money">${fmt(Math.abs(diff))}</span></span>` 
+  };
 }
 
 /* ==========================================================================
@@ -526,20 +514,10 @@ function renderExpenses() {
   }
 
   if (longPerMonth > 0) {
-    html += autoRowHtml(
-      '🎯 Накопления на долгосрочные цели',
-      'Из секции «Долгосрочные цели»',
-      longPerMonth,
-      ''
-    );
+    html += autoRowHtml('🎯 Накопления на долгосрочные цели', 'Из секции «Долгосрочные цели»', longPerMonth, '');
   }
   if (shortPerMonth > 0) {
-    html += autoRowHtml(
-      '🎯 Накопления на краткосрочные цели',
-      'Из секции «Краткосрочные цели»',
-      shortPerMonth,
-      'short'
-    );
+    html += autoRowHtml('🎯 Накопления на краткосрочные цели', 'Из секции «Краткосрочные цели»', shortPerMonth, 'short');
   }
 
   if (state.expenses.length || goalsPerMonth > 0) {
@@ -615,25 +593,15 @@ function renderGoalListInto(el, hint, goals) {
     if (c.done) {
       monthlyHtml = `<span class="goal-monthly done">✓ Готово</span>`;
     } else if (c.overdue) {
-      monthlyHtml = `<span class="goal-monthly overdue">⚠️ Просрочено на ${money(fmt(c.remaining))}</span>`;
+      monthlyHtml = `<span class="goal-monthly overdue">⚠️ Просрочено</span>`;
     } else if (c.growthCovers) {
       monthlyHtml = `<span class="goal-monthly done">✓ Рост покрывает</span>`;
     } else if (hasIndex) {
       const lastYear = c.yearBreakdown[c.yearBreakdown.length - 1]?.monthly || c.perMonth;
-      monthlyHtml = `<span class="goal-monthly">${money(fmt(c.perMonth))} → ${money(fmt(lastYear))}/мес</span>`;
+      monthlyHtml = `<span class="goal-monthly">${money(fmt(c.perMonth))} <span>→ ${money(fmt(lastYear))}/мес</span></span>`;
     } else {
-      monthlyHtml = `<span class="goal-monthly">${money(fmt(c.perMonth))}/мес</span>`;
+      monthlyHtml = `<span class="goal-monthly">${money(fmt(c.perMonth))}<span>/мес</span></span>`;
     }
-
-    const badge = planVsFactBadge(g);
-    const badgeHtml = badge ? `<div class="goal-badge ${badge.cls}">${badge.label}</div>` : '';
-
-    const rateBadge = hasRate
-      ? `<span class="goal-rate-badge">💹 ${c.rateAnnual}%</span>`
-      : '';
-    const indexBadge = hasIndex
-      ? `<span class="goal-index-badge">📈 ${c.indexAnnual}%</span>`
-      : '';
 
     const rateInfo = (hasRate && !c.done && c.interestEarned > 0)
       ? `<div class="goal-rate-info">
@@ -688,38 +656,62 @@ function renderGoalListInto(el, hint, goals) {
           <span>Удалить</span>
         </div>
         <div class="goal-card ${hasRate ? 'with-rate' : ''}" data-goal-card="${g.id}">
-          <div class="goal-head">
-            <div style="min-width:0">
-              <div class="goal-name">${escapeHtml(g.name)}${rateBadge}${indexBadge}</div>
-              <div class="goal-meta">К ${formatDeadline(g.deadline)} · ${humanDuration(c.diff)}</div>
+          <div class="goal-content">
+            
+            <!-- Верхний блок: Название и Ставки -->
+            <div class="goal-top">
+              <div class="goal-title-wrap">
+                <div class="goal-name">${escapeHtml(g.name)}</div>
+                ${(hasRate || hasIndex) ? `
+                  <div class="goal-rates">
+                    ${hasRate ? `<span class="rate-pill">💹 ${c.rateAnnual}%</span>` : ''}
+                    ${hasIndex ? `<span class="rate-pill">📈 ${c.indexAnnual}%</span>` : ''}
+                  </div>
+                ` : ''}
+              </div>
             </div>
-            ${badgeHtml}
+
+            <!-- Главный блок: Взнос и Дедлайн -->
+            <div class="goal-main">
+              <div class="goal-monthly-wrap">
+                ${monthlyHtml}
+              </div>
+              <div class="goal-deadline">
+                К ${formatDeadline(g.deadline)}
+                <span class="muted">(${humanDuration(c.diff)})</span>
+              </div>
+            </div>
+
+            <!-- Прогресс -->
+            <div class="goal-progress-wrap">
+              <div class="progress-bar">
+                <div class="progress-fill ${fillClass}" style="width:${c.percent}%"></div>
+              </div>
+              <div class="goal-progress-text">
+                <span class="goal-saved">${money(fmt(c.saved))} <span class="muted">из</span> ${money(fmt(g.target))}</span>
+                <span class="progress-percent">${Math.round(c.percent)}%</span>
+              </div>
+            </div>
+
+            ${rateInfo}
+            ${indexInfo}
+            ${indexBreakdown}
+
+            <!-- Форма взноса -->
+            <div class="contrib-form" data-goal-id="${g.id}">
+              <input type="number" placeholder="Взнос ₽" min="0" step="100" data-contrib-input>
+              <input type="date" value="${todayStr()}" data-contrib-date>
+              <button type="button" data-add-contrib>+</button>
+            </div>
+
+            <!-- История взносов -->
+            <details class="contrib-history">
+              <summary>История взносов (${contribs.length})</summary>
+              ${chart}
+              <div class="contrib-list">${contribList}</div>
+            </details>
+
           </div>
-
-          <div class="progress-bar">
-            <div class="progress-fill ${fillClass}" style="width:${c.percent}%"></div>
-          </div>
-
-          <div class="goal-stats">
-            <span class="goal-saved">${money(fmt(c.saved))} из ${money(fmt(g.target))} · ${Math.round(c.percent)}%</span>
-            ${monthlyHtml}
-          </div>
-
-          ${rateInfo}
-          ${indexInfo}
-          ${indexBreakdown}
-
-          <div class="contrib-form" data-goal-id="${g.id}">
-            <input type="number" placeholder="Взнос ₽" min="0" step="100" data-contrib-input>
-            <input type="date" value="${todayStr()}" data-contrib-date>
-            <button type="button" data-add-contrib>+</button>
-          </div>
-
-          <details class="contrib-history">
-            <summary>История взносов (${contribs.length})</summary>
-            ${chart}
-            <div class="contrib-list">${contribList}</div>
-          </details>
         </div>
       </div>
     `;
@@ -1095,21 +1087,18 @@ function renderCalendar() {
   const baseExp = totalBaseExpenses();
   const free = income - baseExp;
 
-  // Собираем множество месяцев, в которых есть взносы
   const contribMonthIdxs = new Set();
   all.forEach(g => (g.contributions || []).forEach(c => {
     const m = (c.date || '').slice(0, 7);
     if (m) contribMonthIdxs.add(monthIdxFromKey(m));
   }));
 
-  // Диапазон: от самого раннего взноса (не глубже 24 мес) до furthest
   let displayStart = startMonth;
   if (contribMonthIdxs.size > 0) {
     displayStart = Math.min(displayStart, Math.min(...contribMonthIdxs));
   }
   displayStart = Math.max(displayStart, startMonth - 24);
 
-  // Дальний конец — максимальный дедлайн незавершённых целей
   let furthest = startMonth;
   all.forEach(g => {
     if (calcGoal(g).done) return;
@@ -1119,7 +1108,6 @@ function renderCalendar() {
   });
   if (furthest < displayStart) furthest = displayStart;
 
-  // Пиковая нагрузка (по плану)
   let peak = { month: startMonth, total: 0 };
   for (let m = startMonth; m <= furthest; m++) {
     const p = plannedForMonth(m);
@@ -1136,12 +1124,10 @@ function renderCalendar() {
       </div>`
     : '';
 
-  // Сводка
   const plannedMonths = [];
   for (let m = startMonth; m <= furthest; m++) {
     if (plannedForMonth(m) > 0) plannedMonths.push(m);
   }
-  const totalPlannedFuture = plannedMonths.reduce((s, m) => s + plannedForMonth(m), 0);
 
   const summary = `
     <div class="cal-summary">
@@ -1160,7 +1146,6 @@ function renderCalendar() {
     </div>
   `;
 
-  // Строки
   const rows = [];
   for (let m = displayStart; m <= furthest; m++) {
     const mk = monthKeyFromIdx(m);
@@ -1201,10 +1186,8 @@ function renderCalendar() {
 
 function openMonthModal(monthKey) {
   currentMonthModalKey = monthKey;
-  const mIdx = monthIdxFromKey(monthKey);
   const [y, mo] = monthKey.split('-').map(Number);
-  document.getElementById('monthModalTitle').textContent =
-    `${MONTHS_SHORT[mo-1]} ${y}`;
+  document.getElementById('monthModalTitle').textContent = `${MONTHS_SHORT[mo-1]} ${y}`;
   document.getElementById('monthModal').style.display = 'flex';
   renderMonthModalBody(monthKey);
 }
@@ -1236,7 +1219,6 @@ function renderMonthModalBody(monthKey) {
     const calAmt = cal ? Number(cal.amount || 0) : 0;
     const totalFact = manualSum + calAmt;
 
-    // Пропускаем, если по цели в этом месяце ничего нет
     if (planM <= 0 && totalFact <= 0) return '';
 
     const manualHtml = manual.length > 0 ? `
@@ -1317,7 +1299,6 @@ function renderMonthModalBody(monthKey) {
     ${totalsHtml}
   `;
 
-  // Wire handlers
   body.querySelectorAll('.mm-goal').forEach(el => {
     const gid = el.dataset.goalId;
     const check = el.querySelector('[data-mm-check]');
@@ -2308,7 +2289,6 @@ document.getElementById('goalModal').addEventListener('click', e => {
   if (e.target.id === 'goalModal') closeGoalModal();
 });
 
-// Месячная модалка
 document.getElementById('monthModalClose').onclick = closeMonthModal;
 document.getElementById('monthModalCloseBtn').onclick = closeMonthModal;
 document.getElementById('monthModal').addEventListener('click', e => {
