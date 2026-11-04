@@ -11,7 +11,7 @@
    8. Свайпы
    9. Модалка
    10. Итоговая панель
-   11. Календарь
+   11. Календарь (v1.9: план vs факт)
    12. Статистика
    13. CRUD доходов/расходов
    14. Экспорт / импорт
@@ -52,7 +52,9 @@ let state = {
 
 let goalModalMode = 'add';
 let goalModalEditId = null;
-let goalModalType = 'long'; // 'long' | 'short'
+let goalModalType = 'long';
+
+let currentMonthModalKey = null;
 
 const uid = () => Math.random().toString(36).slice(2, 9);
 
@@ -112,6 +114,22 @@ function currentMonthKey() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
+function currentMonthIdx() {
+  const d = new Date();
+  return d.getFullYear() * 12 + d.getMonth();
+}
+
+function monthKeyFromIdx(idx) {
+  const y = Math.floor(idx / 12);
+  const m = idx % 12;
+  return `${y}-${String(m + 1).padStart(2, '0')}`;
+}
+
+function monthIdxFromKey(key) {
+  const [y, m] = key.split('-').map(Number);
+  return y * 12 + (m - 1);
+}
+
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, c => ({
     '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
@@ -133,7 +151,6 @@ const fmtShort = n => {
   return String(Math.round(n));
 };
 
-/* Обёртка для сумм, которые нужно скрывать в privacy-режиме */
 const money = html => `<span class="money">${html}</span>`;
 
 function formatDeadline(deadline) {
@@ -319,6 +336,83 @@ function totalOneTimeThisMonth() {
   return state.oneTimeIncomes
     .filter(i => (i.date || '').slice(0, 7) === ym)
     .reduce((s, i) => s + Number(i.amount || 0), 0);
+}
+
+/* ----- v1.9: план vs факт ----- */
+
+function calendarContribForMonth(goal, monthKey) {
+  return (goal.contributions || []).find(c => c.plannedMonth === monthKey) || null;
+}
+
+function manualContribsForMonth(goal, monthKey) {
+  return (goal.contributions || []).filter(c =>
+    !c.plannedMonth && (c.date || '').slice(0, 7) === monthKey
+  );
+}
+
+function actualForGoalInMonth(goal, monthKey) {
+  const manual = manualContribsForMonth(goal, monthKey)
+    .reduce((s, c) => s + Number(c.amount || 0), 0);
+  const cal = calendarContribForMonth(goal, monthKey);
+  return manual + (cal ? Number(cal.amount || 0) : 0);
+}
+
+function plannedForGoalInMonth(goal, monthIdx) {
+  const startMonth = currentMonthIdx();
+  if (monthIdx < startMonth) return 0;
+  const c = calcGoal(goal);
+  if (!c.perMonth) return 0;
+  const [y, m] = goal.deadline.split('-').map(Number);
+  const endMonth = y * 12 + (m - 1);
+  if (monthIdx > endMonth) return 0;
+  const yearIdx = Math.floor((monthIdx - startMonth) / 12);
+  const indexRate = Number(goal.indexRate) || 0;
+  return c.perMonth * Math.pow(1 + indexRate / 100, yearIdx);
+}
+
+function plannedForMonth(monthIdx) {
+  return allGoals().reduce((s, g) => s + plannedForGoalInMonth(g, monthIdx), 0);
+}
+
+function actualForMonth(monthKey) {
+  return allGoals().reduce((s, g) => s + actualForGoalInMonth(g, monthKey), 0);
+}
+
+function cumulativeUpTo(monthKey) {
+  return allGoals().reduce((s, g) => {
+    return s + (g.contributions || [])
+      .filter(c => (c.date || '').slice(0, 7) <= monthKey)
+      .reduce((a, c) => a + Number(c.amount || 0), 0);
+  }, 0);
+}
+
+function planVsFactBadge(goal) {
+  const c = calcGoal(goal);
+  if (c.done || c.overdue) return null;
+
+  const curIdx = currentMonthIdx();
+  const planM = plannedForGoalInMonth(goal, curIdx);
+  if (planM <= 0) return null;
+
+  const factM = actualForGoalInMonth(goal, currentMonthKey());
+  const diff = planM - factM;
+
+  if (diff <= 0) return { cls: 'ok', label: '✅ в плане' };
+  return { cls: 'late', label: `⚠️ −${fmtNum(diff)} ₽` };
+}
+
+function statusForMonth(monthIdx, planM, factM) {
+  const cur = currentMonthIdx();
+  if (monthIdx > cur) {
+    return planM > 0
+      ? { cls: 'plan', label: '⬜' }
+      : { cls: 'none', label: '—' };
+  }
+  if (planM === 0 && factM === 0) return { cls: 'none', label: '—' };
+  if (planM === 0 && factM > 0) return { cls: 'ok', label: '✓' };
+  const diff = planM - factM;
+  if (diff <= 0) return { cls: 'ok', label: '✅' };
+  return { cls: 'late', label: `⚠️ −${fmtNum(diff)} ₽` };
 }
 
 /* ==========================================================================
@@ -531,6 +625,9 @@ function renderGoalListInto(el, hint, goals) {
       monthlyHtml = `<span class="goal-monthly">${money(fmt(c.perMonth))}/мес</span>`;
     }
 
+    const badge = planVsFactBadge(g);
+    const badgeHtml = badge ? `<div class="goal-badge ${badge.cls}">${badge.label}</div>` : '';
+
     const rateBadge = hasRate
       ? `<span class="goal-rate-badge">💹 ${c.rateAnnual}%</span>`
       : '';
@@ -573,7 +670,7 @@ function renderGoalListInto(el, hint, goals) {
     const contribList = contribs.length
       ? contribs.map(cn => `
           <div class="contrib-item">
-            <span class="date">${formatDateRu(cn.date)}</span>
+            <span class="date">${formatDateRu(cn.date)}${cn.plannedMonth ? ' · пл' : ''}</span>
             <span style="display:flex;align-items:center">
               <span class="amt">+${money(fmt(cn.amount))}</span>
               <button class="del" data-contrib-id="${cn.id}" data-goal-id="${g.id}" title="Удалить">×</button>
@@ -596,6 +693,7 @@ function renderGoalListInto(el, hint, goals) {
               <div class="goal-name">${escapeHtml(g.name)}${rateBadge}${indexBadge}</div>
               <div class="goal-meta">К ${formatDeadline(g.deadline)} · ${humanDuration(c.diff)}</div>
             </div>
+            ${badgeHtml}
           </div>
 
           <div class="progress-bar">
@@ -816,6 +914,7 @@ function deleteGoal(goalId) {
   const [deleted] = arr.splice(idx, 1);
   save();
   renderGoalsAndTotals();
+  if (currentMonthModalKey) renderMonthModalBody(currentMonthModalKey);
 
   showToast(`Цель «${deleted.name}» удалена`, false, {
     label: 'Отменить',
@@ -824,6 +923,7 @@ function deleteGoal(goalId) {
       arr.splice(insertAt, 0, deleted);
       save();
       renderGoalsAndTotals();
+      if (currentMonthModalKey) renderMonthModalBody(currentMonthModalKey);
       showToast('Восстановлено');
     },
   });
@@ -934,6 +1034,7 @@ function saveGoalFromModal() {
   save();
   closeGoalModal();
   renderGoalsAndTotals();
+  if (currentMonthModalKey) renderMonthModalBody(currentMonthModalKey);
   const msg = wasAdd
     ? (wasShort ? 'Краткосрочная цель добавлена' : 'Цель добавлена')
     : 'Изменения сохранены';
@@ -977,99 +1078,332 @@ function renderTotal() {
 }
 
 /* ==========================================================================
-   11. КАЛЕНДАРЬ
+   11. КАЛЕНДАРЬ (v1.9: план vs факт)
    ========================================================================== */
 
 function renderCalendar() {
   const el = document.getElementById('calendarContent');
+  const all = allGoals();
 
+  if (!all.length) {
+    el.innerHTML = '<div class="empty-hint">Целей нет — добавь цель во вкладке «План», чтобы увидеть календарь 📋</div>';
+    return;
+  }
+
+  const startMonth = currentMonthIdx();
   const income = totalMonthlyIncome();
   const baseExp = totalBaseExpenses();
   const free = income - baseExp;
 
-  const activeGoals = allGoals().filter(g => !calcGoal(g).done);
+  // Собираем множество месяцев, в которых есть взносы
+  const contribMonthIdxs = new Set();
+  all.forEach(g => (g.contributions || []).forEach(c => {
+    const m = (c.date || '').slice(0, 7);
+    if (m) contribMonthIdxs.add(monthIdxFromKey(m));
+  }));
 
-  if (!activeGoals.length) {
-    el.innerHTML = '<div class="empty-hint">Активных целей нет — либо добавь цель, либо все уже достигнуты 🎉</div>';
-    return;
+  // Диапазон: от самого раннего взноса (не глубже 24 мес) до furthest
+  let displayStart = startMonth;
+  if (contribMonthIdxs.size > 0) {
+    displayStart = Math.min(displayStart, Math.min(...contribMonthIdxs));
   }
+  displayStart = Math.max(displayStart, startMonth - 24);
 
-  const now = new Date();
-  const startMonth = now.getFullYear() * 12 + now.getMonth();
-
-  const goalData = activeGoals.map(g => {
-    const c = calcGoal(g);
+  // Дальний конец — максимальный дедлайн незавершённых целей
+  let furthest = startMonth;
+  all.forEach(g => {
+    if (calcGoal(g).done) return;
     const [y, m] = g.deadline.split('-').map(Number);
-    return { goal: g, calc: c, endMonth: y * 12 + (m - 1), startMonthIdx: startMonth };
+    const end = y * 12 + (m - 1);
+    if (end > furthest) furthest = end;
   });
+  if (furthest < displayStart) furthest = displayStart;
 
-  const furthest = Math.max(...goalData.map(g => g.endMonth));
-
-  const rows = [];
+  // Пиковая нагрузка (по плану)
   let peak = { month: startMonth, total: 0 };
-
-  const contribAtMonth = (gd, monthIdx) => {
-    const c = gd.calc;
-    if (!c.perMonth) return 0;
-    if (monthIdx > gd.endMonth) return 0;
-    const yearIdx = Math.floor((monthIdx - startMonth) / 12);
-    const indexRate = Number(gd.goal.indexRate) || 0;
-    return c.perMonth * Math.pow(1 + indexRate / 100, yearIdx);
-  };
-
   for (let m = startMonth; m <= furthest; m++) {
-    const active = goalData.filter(g => m <= g.endMonth);
-    if (!active.length) continue;
-
-    const total = active.reduce((s, gd) => s + contribAtMonth(gd, m), 0);
-    if (total > peak.total) peak = { month: m, total };
-
-    const overload = income > 0 && total > free;
-    rows.push({
-      label: monthLabel(m),
-      total,
-      overload,
-      breakdown: active.map(gd =>
-        `${escapeHtml(gd.goal.name)} ${money(fmt(contribAtMonth(gd, m)))}`
-      ).join(' · '),
-    });
+    const p = plannedForMonth(m);
+    if (p > peak.total) peak = { month: m, total: p };
   }
 
   const peakWarn = peak.total > free && income > 0;
   const warningBanner = peakWarn
     ? `<div class="warning-banner">
-        ⚠️ В пиковый месяц (<strong>${monthLabel(peak.month)}</strong>) нужно отложить
-        <strong class="money">${fmt(peak.total)}</strong>, а свободно только <strong class="money">${fmt(free)}</strong>.
+        ⚠️ В пиковый месяц (<strong>${monthLabel(peak.month)}</strong>) по плану нужно отложить
+        <strong class="money">${fmt(peak.total)}</strong>, а свободно только
+        <strong class="money">${fmt(free)}</strong>.
         Дефицит: <strong class="money">${fmt(peak.total - free)}</strong>. Растяни сроки или урежь цели.
       </div>`
     : '';
+
+  // Сводка
+  const plannedMonths = [];
+  for (let m = startMonth; m <= furthest; m++) {
+    if (plannedForMonth(m) > 0) plannedMonths.push(m);
+  }
+  const totalPlannedFuture = plannedMonths.reduce((s, m) => s + plannedForMonth(m), 0);
 
   const summary = `
     <div class="cal-summary">
       <div class="cal-sum-row">
         <span>Свободно в месяц (доход − расходы)</span>
-        <span class="v">${fmt(free)}</span>
+        <span class="v">${money(fmt(free))}</span>
       </div>
       <div class="cal-sum-row">
-        <span>Пик нагрузки</span>
-        <span class="v ${peakWarn ? 'warn' : ''}">${fmt(peak.total)} · ${monthLabel(peak.month)}</span>
+        <span>Пик нагрузки по плану</span>
+        <span class="v ${peakWarn ? 'warn' : ''}">${money(fmt(peak.total))} · ${monthLabel(peak.month)}</span>
       </div>
       <div class="cal-sum-row">
-        <span>Месяцев в плане</span>
-        <span class="v">${rows.length}</span>
+        <span>Плановых месяцев</span>
+        <span class="v">${plannedMonths.length}</span>
       </div>
     </div>
   `;
 
+  // Строки
+  const rows = [];
+  for (let m = displayStart; m <= furthest; m++) {
+    const mk = monthKeyFromIdx(m);
+    const planM = m >= startMonth ? plannedForMonth(m) : 0;
+    const factM = actualForMonth(mk);
+    const cumulM = cumulativeUpTo(mk);
+    const status = statusForMonth(m, planM, factM);
+    rows.push({ m, mk, planM, factM, cumulM, status });
+  }
+
+  const header = `
+    <div class="cal-table-head">
+      <span>Месяц</span>
+      <span>План</span>
+      <span>Факт</span>
+      <span>Итого</span>
+      <span>Статус</span>
+    </div>
+  `;
+
   const rowsHtml = rows.map(r => `
-    <div class="cal-row ${r.overload ? 'overload' : ''}">
-      <div class="cal-month">${r.label}</div>
-      <div class="cal-breakdown">${r.breakdown}</div>
-      <div class="cal-total">${fmt(r.total)}</div>
+    <div class="cal-row cal-row-${r.status.cls}" data-cal-month="${r.mk}">
+      <div class="cal-month">${monthLabel(r.m)}</div>
+      <div class="cal-plan">${r.planM > 0 ? money(fmt(r.planM)) : '—'}</div>
+      <div class="cal-fact">${r.factM > 0 ? money(fmt(r.factM)) : '—'}</div>
+      <div class="cal-cumul">${money(fmt(r.cumulM))}</div>
+      <div class="cal-status ${r.status.cls}">${r.status.label}</div>
     </div>
   `).join('');
 
-  el.innerHTML = warningBanner + summary + rowsHtml;
+  el.innerHTML = warningBanner + summary +
+    `<div class="cal-table">${header}${rowsHtml}</div>`;
+
+  el.querySelectorAll('[data-cal-month]').forEach(row => {
+    row.addEventListener('click', () => openMonthModal(row.dataset.calMonth));
+  });
+}
+
+function openMonthModal(monthKey) {
+  currentMonthModalKey = monthKey;
+  const mIdx = monthIdxFromKey(monthKey);
+  const [y, mo] = monthKey.split('-').map(Number);
+  document.getElementById('monthModalTitle').textContent =
+    `${MONTHS_SHORT[mo-1]} ${y}`;
+  document.getElementById('monthModal').style.display = 'flex';
+  renderMonthModalBody(monthKey);
+}
+
+function closeMonthModal() {
+  document.getElementById('monthModal').style.display = 'none';
+  currentMonthModalKey = null;
+}
+
+function renderMonthModalBody(monthKey) {
+  const body = document.getElementById('monthModalBody');
+  const mIdx = monthIdxFromKey(monthKey);
+  const nowIdx = currentMonthIdx();
+  const isPast = mIdx < nowIdx;
+
+  const longGoals = state.goals.filter(g => !calcGoal(g).done);
+  const shortGoals = state.shortGoals.filter(g => !calcGoal(g).done);
+
+  if (!longGoals.length && !shortGoals.length) {
+    body.innerHTML = '<div class="empty-hint">Нет активных целей</div>';
+    return;
+  }
+
+  const renderGoalRow = (g) => {
+    const planM = plannedForGoalInMonth(g, mIdx);
+    const manual = manualContribsForMonth(g, monthKey);
+    const manualSum = manual.reduce((s, c) => s + Number(c.amount || 0), 0);
+    const cal = calendarContribForMonth(g, monthKey);
+    const calAmt = cal ? Number(cal.amount || 0) : 0;
+    const totalFact = manualSum + calAmt;
+
+    // Пропускаем, если по цели в этом месяце ничего нет
+    if (planM <= 0 && totalFact <= 0) return '';
+
+    const manualHtml = manual.length > 0 ? `
+      <div class="mm-manual">
+        ${manual.map(c => `
+          <span class="mm-manual-item">
+            ${money(fmt(c.amount))}
+            <span class="mm-manual-date">${formatDateRu(c.date)}</span>
+            <button class="mm-del-manual" data-contrib-id="${c.id}" title="Удалить">×</button>
+          </span>
+        `).join('')}
+      </div>
+    ` : '';
+
+    if (isPast) {
+      return `
+        <div class="mm-goal" data-goal-id="${g.id}">
+          <div class="mm-goal-head">
+            <span class="mm-name">${escapeHtml(g.name)}</span>
+            <span class="mm-fact-total">${money(fmt(totalFact))}</span>
+          </div>
+          ${manualHtml}
+        </div>
+      `;
+    }
+
+    const checked = !!cal;
+    const displayAmount = totalFact > 0 ? totalFact : planM;
+    const defaultDate = cal
+      ? cal.date
+      : (mIdx === nowIdx ? todayStr() : `${monthKey}-01`);
+
+    return `
+      <div class="mm-goal" data-goal-id="${g.id}">
+        <div class="mm-goal-head">
+          <input type="checkbox" class="mm-check" id="mmc-${g.id}" ${checked ? 'checked' : ''} data-mm-check>
+          <label for="mmc-${g.id}" class="mm-name">${escapeHtml(g.name)}</label>
+          <span class="mm-plan">план ${money(fmt(planM))}</span>
+        </div>
+        <div class="mm-input-row">
+          <input type="number" class="mm-amount" min="0" step="100"
+                 value="${Math.round(displayAmount)}"
+                 placeholder="Сумма ₽" data-mm-amount>
+          <input type="date" class="mm-date" value="${defaultDate}" data-mm-date>
+        </div>
+        ${manualHtml}
+      </div>
+    `;
+  };
+
+  const longHtml = longGoals.map(renderGoalRow).join('');
+  const shortHtml = shortGoals.map(renderGoalRow).join('');
+
+  const planTotal = plannedForMonth(mIdx);
+  const factTotal = actualForMonth(monthKey);
+  const diffTotal = planTotal - factTotal;
+
+  let totalsHtml = '';
+  if (!isPast) {
+    totalsHtml = `
+      <div class="mm-totals">
+        <div class="mm-total-row"><span>План:</span><span class="money">${fmt(planTotal)}</span></div>
+        <div class="mm-total-row"><span>Факт:</span><span class="money">${fmt(factTotal)}</span></div>
+        ${planTotal > 0 ? `
+          <div class="mm-total-row ${diffTotal > 0 ? 'late' : 'ok'}">
+            <span>${diffTotal > 0 ? 'Отставание:' : 'Опережение:'}</span>
+            <span class="money">${fmt(Math.abs(diffTotal))}</span>
+          </div>
+        ` : ''}
+      </div>
+    `;
+  }
+
+  body.innerHTML = `
+    ${longHtml ? `<div class="mm-section"><div class="mm-section-title">Долгосрочные цели</div>${longHtml}</div>` : ''}
+    ${shortHtml ? `<div class="mm-section"><div class="mm-section-title">Краткосрочные цели</div>${shortHtml}</div>` : ''}
+    ${!longHtml && !shortHtml ? '<div class="empty-hint">В этом месяце по целям ничего нет</div>' : ''}
+    ${totalsHtml}
+  `;
+
+  // Wire handlers
+  body.querySelectorAll('.mm-goal').forEach(el => {
+    const gid = el.dataset.goalId;
+    const check = el.querySelector('[data-mm-check]');
+    const amount = el.querySelector('[data-mm-amount]');
+    const date = el.querySelector('[data-mm-date]');
+
+    const persist = () => {
+      const g = findGoalById(gid);
+      if (!g) return;
+      const manualSum = manualContribsForMonth(g, monthKey)
+        .reduce((s, c) => s + Number(c.amount || 0), 0);
+      const existing = calendarContribForMonth(g, monthKey);
+
+      if (!check.checked) {
+        if (existing) {
+          g.contributions = g.contributions.filter(c => c.id !== existing.id);
+          save();
+        }
+      } else {
+        const wanted = Math.max(0, Number(amount.value) || 0);
+        const delta = Math.max(0, wanted - manualSum);
+        if (delta <= 0) {
+          if (existing) {
+            g.contributions = g.contributions.filter(c => c.id !== existing.id);
+            save();
+          }
+        } else if (existing) {
+          existing.amount = delta;
+          if (date.value) existing.date = date.value;
+          save();
+        } else {
+          g.contributions.push({
+            id: uid(),
+            date: date.value || todayStr(),
+            amount: delta,
+            plannedMonth: monthKey,
+          });
+          save();
+        }
+      }
+
+      renderGoalsAndTotals();
+      if (currentMonthModalKey) renderMonthModalBody(currentMonthModalKey);
+    };
+
+    if (check) {
+      check.addEventListener('change', () => {
+        if (check.checked && !Number(amount.value)) {
+          const g = findGoalById(gid);
+          if (g) {
+            const manualSum = manualContribsForMonth(g, monthKey)
+              .reduce((s, c) => s + Number(c.amount || 0), 0);
+            const planM = plannedForGoalInMonth(g, monthIdxFromKey(monthKey));
+            amount.value = Math.round(Math.max(planM, manualSum));
+          }
+        }
+        persist();
+      });
+    }
+
+    if (amount) {
+      amount.addEventListener('change', () => {
+        if (!check.checked && Number(amount.value) > 0) {
+          check.checked = true;
+        }
+        persist();
+      });
+    }
+
+    if (date) {
+      date.addEventListener('change', () => {
+        if (check.checked) persist();
+      });
+    }
+
+    el.querySelectorAll('.mm-del-manual').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const g = findGoalById(gid);
+        if (!g) return;
+        g.contributions = g.contributions.filter(c => c.id !== btn.dataset.contribId);
+        save();
+        renderGoalsAndTotals();
+        if (currentMonthModalKey) renderMonthModalBody(currentMonthModalKey);
+      });
+    });
+  });
 }
 
 /* ==========================================================================
@@ -1694,16 +2028,16 @@ function exportCSV() {
   push();
 
   push('ВЗНОСЫ');
-  push('Тип', 'Цель', 'Дата', 'Сумма (₽)');
+  push('Тип', 'Цель', 'Дата', 'Плановый месяц', 'Сумма (₽)');
   sortedLong.forEach(g => {
     (g.contributions || [])
       .slice().sort((a, b) => a.date.localeCompare(b.date))
-      .forEach(cn => push('Долгосрочная', g.name, cn.date, fmtNum(cn.amount)));
+      .forEach(cn => push('Долгосрочная', g.name, cn.date, cn.plannedMonth || '', fmtNum(cn.amount)));
   });
   sortedShort.forEach(g => {
     (g.contributions || [])
       .slice().sort((a, b) => a.date.localeCompare(b.date))
-      .forEach(cn => push('Краткосрочная', g.name, cn.date, fmtNum(cn.amount)));
+      .forEach(cn => push('Краткосрочная', g.name, cn.date, cn.plannedMonth || '', fmtNum(cn.amount)));
   });
   push();
 
@@ -1723,7 +2057,7 @@ function exportCSV() {
 function exportJSON() {
   const data = {
     exportedAt: new Date().toISOString(),
-    version: 6,
+    version: 7,
     monthlyIncomes: state.monthlyIncomes,
     oneTimeIncomes: state.oneTimeIncomes,
     expenses: state.expenses,
@@ -1775,11 +2109,17 @@ function importJSON(file) {
       const parseGoals = arr => Array.isArray(arr)
         ? arr.map(g => {
             const contributions = Array.isArray(g.contributions)
-              ? g.contributions.map(c => ({
-                  id: c.id || uid(),
-                  date: c.date || todayStr(),
-                  amount: Number(c.amount) || 0,
-                }))
+              ? g.contributions.map(c => {
+                  const out = {
+                    id: c.id || uid(),
+                    date: c.date || todayStr(),
+                    amount: Number(c.amount) || 0,
+                  };
+                  if (c.plannedMonth && /^\d{4}-\d{2}$/.test(c.plannedMonth)) {
+                    out.plannedMonth = c.plannedMonth;
+                  }
+                  return out;
+                })
               : [];
             if (!contributions.length && Number(g.saved) > 0) {
               contributions.push({ id: uid(), date: todayStr(), amount: Number(g.saved) });
@@ -1805,6 +2145,7 @@ function importJSON(file) {
       renderMonthlyIncomes(); renderOneTimeIncomes(); renderExpenses();
       renderGoals(); renderShortGoals();
       renderTotal(); renderCalendar(); renderStats();
+      closeMonthModal();
       showToast('Данные восстановлены');
     } catch (err) {
       console.error(err);
@@ -1915,7 +2256,6 @@ load();
 
 document.getElementById('oiDate').value = todayStr();
 
-// Privacy: синхронизируем label/aria с сохранённым состоянием
 setPrivacy(isPrivacyOn());
 document.getElementById('privacyToggle').addEventListener('click', togglePrivacy);
 
@@ -1968,9 +2308,20 @@ document.getElementById('goalModal').addEventListener('click', e => {
   if (e.target.id === 'goalModal') closeGoalModal();
 });
 
+// Месячная модалка
+document.getElementById('monthModalClose').onclick = closeMonthModal;
+document.getElementById('monthModalCloseBtn').onclick = closeMonthModal;
+document.getElementById('monthModal').addEventListener('click', e => {
+  if (e.target.id === 'monthModal') closeMonthModal();
+});
+
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && document.getElementById('goalModal').style.display !== 'none') {
-    closeGoalModal();
+  if (e.key === 'Escape') {
+    if (document.getElementById('goalModal').style.display !== 'none') {
+      closeGoalModal();
+    } else if (document.getElementById('monthModal').style.display !== 'none') {
+      closeMonthModal();
+    }
   }
 });
 
