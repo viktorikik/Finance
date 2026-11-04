@@ -150,6 +150,10 @@
         </div>
       </div>
       <div class="card-body">
+        <div class="export-grid" style="margin-bottom: 12px;">
+          <button class="btn btn-secondary" id="exportPlanHtmlBtn" style="grid-column: span 3; background: rgba(61,220,151,0.15); border-color: var(--green); color: var(--green);">📄 Сформировать финансовый план</button>
+        </div>
+        
         <div class="export-grid">
           <button class="btn" id="exportCsvBtn">📊 CSV</button>
           <button class="btn btn-secondary" id="exportJsonBtn">💾 Бэкап</button>
@@ -157,8 +161,7 @@
         </div>
         <input type="file" id="importFile" accept=".json,application/json" style="display:none">
         <p class="export-desc">
-          <strong>CSV</strong> — таблица для Excel. <strong>Бэкап</strong> — резервная копия (JSON).
-          <strong>Импорт</strong> — восстановить из бэкапа (перезапишет текущие данные).
+          <strong>План</strong> — красивый отчет (HTML или PDF). <strong>CSV</strong> — для Excel. <strong>Бэкап</strong> — сохранение данных.
         </p>
       </div>
     </section>
@@ -288,7 +291,6 @@
   </div>
 </div>
 
-<!-- Модалка месяца (план vs факт) -->
 <div class="modal-overlay" id="monthModal" style="display:none">
   <div class="modal modal-month">
     <div class="modal-header">
