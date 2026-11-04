@@ -658,9 +658,14 @@ function renderGoalListInto(el, hint, goals) {
         <div class="goal-card ${hasRate ? 'with-rate' : ''}" data-goal-card="${g.id}">
           <div class="goal-content">
             
+            <!-- Верхний блок: Название, Компактная сводка (для свернутого вида), Кнопка сворачивания -->
             <div class="goal-top">
               <div class="goal-title-wrap">
                 <div class="goal-name">${escapeHtml(g.name)}</div>
+                <!-- Компактная сводка видна только при сворачивании (CSS) -->
+                <div class="goal-compact-summary">
+                  <span class="money">${fmt(c.saved)}</span> <span class="muted">/</span> <span class="money">${fmt(g.target)}</span>
+                </div>
                 ${(hasRate || hasIndex) ? `
                   <div class="goal-rates">
                     ${hasRate ? `<span class="rate-pill">💹 ${c.rateAnnual}%</span>` : ''}
@@ -673,6 +678,7 @@ function renderGoalListInto(el, hint, goals) {
               </button>
             </div>
 
+            <!-- Главный блок (Взнос + Дедлайн) -->
             <div class="goal-main">
               <div class="goal-monthly-wrap">
                 ${monthlyHtml}
@@ -683,6 +689,7 @@ function renderGoalListInto(el, hint, goals) {
               </div>
             </div>
 
+            <!-- Прогресс-бар -->
             <div class="goal-progress-wrap">
               <div class="progress-bar">
                 <div class="progress-fill ${fillClass}" style="width:${c.percent}%"></div>
@@ -693,6 +700,7 @@ function renderGoalListInto(el, hint, goals) {
               </div>
             </div>
 
+            <!-- Детали (форма, история) -->
             <div class="goal-details">
               ${rateInfo}
               ${indexInfo}
