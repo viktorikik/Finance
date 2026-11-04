@@ -3,7 +3,7 @@
    При релизе — поднять CACHE_VERSION (сбросит старый кэш).
 */
 
-const CACHE_VERSION = 'finance-v4';
+const CACHE_VERSION = 'finance-v7';
 
 const ASSETS = [
   './',
