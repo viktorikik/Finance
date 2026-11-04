@@ -56,6 +56,54 @@
   }
   .subtitle { color: var(--muted); font-size: 14px; margin-top: 6px; }
 
+  /* Переключатель приватности */
+  .privacy-toggle {
+    margin-top: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    background: var(--card-2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .privacy-toggle:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+  .privacy-toggle .icon-eye-off { display: none; }
+  html.privacy-mode .privacy-toggle .icon-eye { display: none; }
+  html.privacy-mode .privacy-toggle .icon-eye-off { display: block; }
+  html.privacy-mode .privacy-toggle {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: rgba(124,92,255,0.15);
+  }
+
+  /* Маскировка сумм */
+  html.privacy-mode .total-bar .v,
+  html.privacy-mode .total-bar .value,
+  html.privacy-mode .item-row .amt,
+  html.privacy-mode .list-total .val,
+  html.privacy-mode .contrib-item .amt,
+  html.privacy-mode .cal-sum-row .v,
+  html.privacy-mode .cal-total,
+  html.privacy-mode .legend-value,
+  html.privacy-mode .money {
+    filter: blur(5px);
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    transition: filter 0.2s ease;
+  }
+
   .tabs {
     display: flex; gap: 4px; margin-bottom: 20px;
     background: var(--card); border: 1px solid var(--border);
@@ -886,6 +934,15 @@
 </head>
 <body>
 
+<!-- Ранняя установка режима приватности — чтобы не было вспышки сумм -->
+<script>
+  try {
+    if (localStorage.getItem('year_planner_privacy_v1') === '1') {
+      document.documentElement.classList.add('privacy-mode');
+    }
+  } catch (e) {}
+</script>
+
 <!-- Кнопка установки PWA -->
 <button class="install-pwa-btn" id="installPwaBtn" style="display:none" title="Установить как приложение">
   <span class="icon">📲</span>
@@ -897,6 +954,17 @@
   <header>
     <h1>💰 Планировщик финансов</h1>
     <p class="subtitle">Доход → расходы + цели</p>
+    <button class="privacy-toggle" id="privacyToggle" aria-pressed="false" aria-label="Скрыть суммы" title="Скрыть суммы">
+      <svg class="icon-eye" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+        <circle cx="12" cy="12" r="3"/>
+      </svg>
+      <svg class="icon-eye-off" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+        <line x1="1" y1="1" x2="23" y2="23"/>
+      </svg>
+      <span class="privacy-label">Скрыть суммы</span>
+    </button>
   </header>
 
   <nav class="tabs">
@@ -1141,6 +1209,7 @@
 <script>
 const STORAGE_KEY = 'year_planner_v1';
 const UI_STORAGE_KEY = 'year_planner_ui_v1';
+const PRIVACY_KEY = 'year_planner_privacy_v1';
 
 const PALETTE = [
   '#7c5cff', '#3ddc97', '#5cc8ff', '#ffc857',
@@ -1234,6 +1303,9 @@ const fmtShort = n => {
   if (abs >= 1000) return (n / 1000).toFixed(0) + 'К';
   return String(Math.round(n));
 };
+
+/* Обёртка для сумм, которые нужно скрывать в privacy-режиме */
+const money = html => `<span class="money">${html}</span>`;
 
 const MONTHS_SHORT = ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
 
@@ -1356,6 +1428,29 @@ function calcGoal(g) {
     rateAnnual, indexAnnual, interestEarned, growthCovers,
     yearBreakdown, yearsCount,
   };
+}
+
+/* ---------- Приватность ---------- */
+
+function isPrivacyOn() {
+  return document.documentElement.classList.contains('privacy-mode');
+}
+
+function setPrivacy(on) {
+  document.documentElement.classList.toggle('privacy-mode', on);
+  try { localStorage.setItem(PRIVACY_KEY, on ? '1' : '0'); } catch (e) {}
+  const btn = document.getElementById('privacyToggle');
+  if (btn) {
+    const label = btn.querySelector('.privacy-label');
+    if (label) label.textContent = on ? 'Показать суммы' : 'Скрыть суммы';
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    btn.setAttribute('aria-label', on ? 'Показать суммы' : 'Скрыть суммы');
+    btn.setAttribute('title', on ? 'Показать суммы' : 'Скрыть суммы');
+  }
+}
+
+function togglePrivacy() {
+  setPrivacy(!isPrivacyOn());
 }
 
 /* ---------- Агрегаты и helpers ---------- */
@@ -1591,14 +1686,14 @@ function renderGoalListInto(el, hint, goals) {
     if (c.done) {
       monthlyHtml = `<span class="goal-monthly done">✓ Готово</span>`;
     } else if (c.overdue) {
-      monthlyHtml = `<span class="goal-monthly overdue">⚠️ Просрочено на ${fmt(c.remaining)}</span>`;
+      monthlyHtml = `<span class="goal-monthly overdue">⚠️ Просрочено на ${money(fmt(c.remaining))}</span>`;
     } else if (c.growthCovers) {
       monthlyHtml = `<span class="goal-monthly done">✓ Рост покрывает</span>`;
     } else if (hasIndex) {
       const lastYear = c.yearBreakdown[c.yearBreakdown.length - 1]?.monthly || c.perMonth;
-      monthlyHtml = `<span class="goal-monthly">${fmt(c.perMonth)} → ${fmt(lastYear)} ₽/мес</span>`;
+      monthlyHtml = `<span class="goal-monthly">${money(fmt(c.perMonth))} → ${money(fmt(lastYear))}/мес</span>`;
     } else {
-      monthlyHtml = `<span class="goal-monthly">${fmt(c.perMonth)}/мес</span>`;
+      monthlyHtml = `<span class="goal-monthly">${money(fmt(c.perMonth))}/мес</span>`;
     }
 
     const rateBadge = hasRate
@@ -1611,14 +1706,14 @@ function renderGoalListInto(el, hint, goals) {
     const rateInfo = (hasRate && !c.done && c.interestEarned > 0)
       ? `<div class="goal-rate-info">
           <span class="label">Доход от процентов к сроку ≈</span>
-          <strong>${fmt(c.interestEarned)}</strong>
+          <strong class="money">${fmt(c.interestEarned)}</strong>
         </div>`
       : '';
 
     const indexInfo = (hasIndex && !c.done && c.perMonth > 0)
       ? `<div class="goal-index-info">
           <span class="label">Взнос растёт на ${c.indexAnnual}%/год:</span>
-          <strong>${fmt(c.perMonth)} → ${fmt(c.yearBreakdown[c.yearBreakdown.length-1].monthly)} ₽/мес</strong>
+          <strong>${money(fmt(c.perMonth))} → ${money(fmt(c.yearBreakdown[c.yearBreakdown.length-1].monthly))}/мес</strong>
         </div>`
       : '';
 
@@ -1629,7 +1724,7 @@ function renderGoalListInto(el, hint, goals) {
             ${c.yearBreakdown.map(y => `
               <div class="year-row">
                 <span>Год ${y.year} · ${y.months} мес</span>
-                <span class="val">${fmt(y.monthly)}/мес</span>
+                <span class="val">${money(fmt(y.monthly))}/мес</span>
               </div>
             `).join('')}
           </div>
@@ -1645,7 +1740,7 @@ function renderGoalListInto(el, hint, goals) {
           <div class="contrib-item">
             <span class="date">${formatDateRu(cn.date)}</span>
             <span style="display:flex;align-items:center">
-              <span class="amt">+${fmt(cn.amount)}</span>
+              <span class="amt">+${money(fmt(cn.amount))}</span>
               <button class="del" data-contrib-id="${cn.id}" data-goal-id="${g.id}" title="Удалить">×</button>
             </span>
           </div>
@@ -1673,7 +1768,7 @@ function renderGoalListInto(el, hint, goals) {
           </div>
 
           <div class="goal-stats">
-            <span class="goal-saved">${fmt(c.saved)} из ${fmt(g.target)} · ${Math.round(c.percent)}%</span>
+            <span class="goal-saved">${money(fmt(c.saved))} из ${money(fmt(g.target))} · ${Math.round(c.percent)}%</span>
             ${monthlyHtml}
           </div>
 
@@ -2092,7 +2187,7 @@ function renderCalendar() {
       total,
       overload,
       breakdown: active.map(gd =>
-        `${escapeHtml(gd.goal.name)} ${fmt(contribAtMonth(gd, m))}`
+        `${escapeHtml(gd.goal.name)} ${money(fmt(contribAtMonth(gd, m)))}`
       ).join(' · '),
     });
   }
@@ -2101,8 +2196,8 @@ function renderCalendar() {
   const warningBanner = peakWarn
     ? `<div class="warning-banner">
         ⚠️ В пиковый месяц (<strong>${monthLabel(peak.month)}</strong>) нужно отложить
-        <strong>${fmt(peak.total)}</strong>, а свободно только <strong>${fmt(free)}</strong>.
-        Дефицит: <strong>${fmt(peak.total - free)}</strong>. Растяни сроки или урежь цели.
+        <strong class="money">${fmt(peak.total)}</strong>, а свободно только <strong class="money">${fmt(free)}</strong>.
+        Дефицит: <strong class="money">${fmt(peak.total - free)}</strong>. Растяни сроки или урежь цели.
       </div>`
     : '';
 
@@ -2195,7 +2290,7 @@ function svgDonut(data, size = 180, thickness = 22) {
 
   const centerText = `
     <text x="${cx}" y="${cy - 4}" text-anchor="middle" class="donut-center-label">Всего</text>
-    <text x="${cx}" y="${cy + 16}" text-anchor="middle" class="donut-center-value">${fmtShort(total)} ₽</text>
+    <text x="${cx}" y="${cy + 16}" text-anchor="middle" class="donut-center-value money">${fmtShort(total)} ₽</text>
   `;
 
   return `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}">${segments}${centerText}</svg>`;
@@ -2254,7 +2349,7 @@ function goalsProgressCard(goals, title) {
       <div class="stat-hbar-row">
         <div class="stat-hbar-head">
           <span class="stat-hbar-name">${escapeHtml(g.name)}${badgeStr}</span>
-          <span class="stat-hbar-val">${fmt(c.saved)} / ${fmt(g.target)} · ${Math.round(c.percent)}%</span>
+          <span class="stat-hbar-val">${money(fmt(c.saved))} / ${money(fmt(g.target))} · ${Math.round(c.percent)}%</span>
         </div>
         <div class="hbar-track">
           <div class="hbar-fill" style="width:${c.percent}%;background:${color}"></div>
@@ -2336,15 +2431,15 @@ function keyStatsCard() {
         </div>
         <div class="stat-tile">
           <div class="label">Свободно в месяц</div>
-          <div class="value ${free < 0 ? 'expense' : ''}">${fmt(free)}</div>
+          <div class="value ${free < 0 ? 'expense' : ''}">${money(fmt(free))}</div>
         </div>
         <div class="stat-tile">
           <div class="label">Накоплено на цели</div>
-          <div class="value income">${fmt(totalSaved)}</div>
+          <div class="value income">${money(fmt(totalSaved))}</div>
         </div>
         <div class="stat-tile">
           <div class="label">Осталось набрать</div>
-          <div class="value">${fmt(Math.max(0, totalTargets - totalSaved))}</div>
+          <div class="value">${money(fmt(Math.max(0, totalTargets - totalSaved)))}</div>
         </div>
       </div>
     </section>
@@ -2377,11 +2472,11 @@ function periodSummaryCard(contribByMonth, range) {
       <div class="stat-deltas">
         <div class="stat-tile">
           <div class="label">Всего внесено</div>
-          <div class="value income">${fmt(total)}</div>
+          <div class="value income">${money(fmt(total))}</div>
         </div>
         <div class="stat-tile">
           <div class="label">Средний в месяц</div>
-          <div class="value">${fmt(avg)}</div>
+          <div class="value">${money(fmt(avg))}</div>
         </div>
         <div class="stat-tile">
           <div class="label">Месяцев со взносами</div>
@@ -2389,7 +2484,7 @@ function periodSummaryCard(contribByMonth, range) {
         </div>
         <div class="stat-tile">
           <div class="label">Лучший месяц</div>
-          <div class="value" style="font-size:14px">${bestLabel} · ${fmtShort(contribByMonth[best])}</div>
+          <div class="value" style="font-size:14px">${bestLabel} · ${money(fmtShort(contribByMonth[best]))}</div>
         </div>
       </div>
     </section>
@@ -2419,7 +2514,7 @@ function monthlyContribsCard(contribByMonth) {
 
   const yLabels = [0, 0.25, 0.5, 0.75, 1].map(p => {
     const y = pad.t + h - p * h;
-    return `<text x="${pad.l - 6}" y="${y + 4}" text-anchor="end" class="axis-label">${fmtShort(max * p)}</text>`;
+    return `<text x="${pad.l - 6}" y="${y + 4}" text-anchor="end" class="axis-label money">${fmtShort(max * p)}</text>`;
   }).join('');
 
   const bars = months.map((m, i) => {
@@ -2445,7 +2540,7 @@ function monthlyContribsCard(contribByMonth) {
 
   return `
     <section class="card">
-      <div class="card-title">Взносы по месяцам · ${fmt(total)}</div>
+      <div class="card-title">Взносы по месяцам · ${money(fmt(total))}</div>
       ${svg}
     </section>
   `;
@@ -2490,7 +2585,7 @@ function cumulativeChart(contribByMonth, range) {
 
   const yLabels = [0, 0.25, 0.5, 0.75, 1].map(p => {
     const y = pad.t + h - p * h;
-    return `<text x="${pad.l - 6}" y="${y + 4}" text-anchor="end" class="axis-label">${fmtShort(max * p)}</text>`;
+    return `<text x="${pad.l - 6}" y="${y + 4}" text-anchor="end" class="axis-label money">${fmtShort(max * p)}</text>`;
   }).join('');
 
   const dots = coords.map(c =>
@@ -2520,7 +2615,7 @@ function cumulativeChart(contribByMonth, range) {
 
   return `
     <section class="card">
-      <div class="card-title">Накопления нарастающим итогом · ${range.label} · ${fmt(max)}</div>
+      <div class="card-title">Накопления нарастающим итогом · ${range.label} · ${money(fmt(max))}</div>
       ${svg}
     </section>
   `;
@@ -2962,6 +3057,10 @@ function restoreCollapsedState() {
 load();
 
 document.getElementById('oiDate').value = todayStr();
+
+// Privacy: синхронизируем label/aria с сохранённым состоянием
+setPrivacy(isPrivacyOn());
+document.getElementById('privacyToggle').addEventListener('click', togglePrivacy);
 
 renderMonthlyIncomes();
 renderOneTimeIncomes();
